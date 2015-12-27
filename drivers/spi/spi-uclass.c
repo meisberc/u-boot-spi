@@ -95,6 +95,31 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	return spi_get_ops(bus)->xfer(dev, bitlen, dout, din, flags);
 }
 
+int spi_read_then_write(struct spi_slave *spi, const u8 *cmd,
+			size_t cmd_len, const u8 *data_out,
+			u8 *data_in, size_t data_len)
+{
+	unsigned long flags = SPI_XFER_BEGIN;
+	int ret;
+
+	if (data_len == 0)
+		flags |= SPI_XFER_END;
+
+	ret = spi_xfer(spi, cmd_len * 8, cmd, NULL, flags);
+	if (ret) {
+		debug("spi: failed to send command (%zu bytes): %d\n",
+		      cmd_len, ret);
+	} else if (data_len != 0) {
+		ret = spi_xfer(spi, data_len * 8, data_out, data_in,
+			       SPI_XFER_END);
+		if (ret)
+			debug("spi: failed to transfer %zu bytes of data: %d\n",
+			      data_len, ret);
+	}
+
+	return ret;
+}
+
 static int spi_post_bind(struct udevice *dev)
 {
 	/* Scan the bus for devices */

@@ -25,31 +25,6 @@ struct m25p {
 #endif
 };
 
-static int spi_read_then_write(struct spi_slave *spi, const u8 *cmd,
-			       size_t cmd_len, const u8 *data_out,
-			       u8 *data_in, size_t data_len)
-{
-	unsigned long flags = SPI_XFER_BEGIN;
-	int ret;
-
-	if (data_len == 0)
-		flags |= SPI_XFER_END;
-
-	ret = spi_xfer(spi, cmd_len * 8, cmd, NULL, flags);
-	if (ret) {
-		debug("SF: Failed to send command (%zu bytes): %d\n",
-		      cmd_len, ret);
-	} else if (data_len != 0) {
-		ret = spi_xfer(spi, data_len * 8, data_out, data_in,
-					SPI_XFER_END);
-		if (ret)
-			debug("SF: Failed to transfer %zu bytes of data: %d\n",
-			      data_len, ret);
-	}
-
-	return ret;
-}
-
 static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
 {
 	struct m25p *flash = nor->priv;
