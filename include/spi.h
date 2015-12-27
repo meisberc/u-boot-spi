@@ -265,6 +265,11 @@ int spi_set_wordlen(struct spi_slave *slave, unsigned int wordlen);
 int  spi_xfer(struct spi_slave *slave, unsigned int bitlen, const void *dout,
 		void *din, unsigned long flags);
 
+/* spi_write_then_read - SPI synchronous read followed by write */
+int spi_read_then_write(struct spi_slave *spi, const u8 *cmd,
+                        size_t cmd_len, const u8 *data_out,
+                        u8 *data_in, size_t data_len);
+
 /* Copy memory mapped data */
 void spi_flash_copy_mmap(void *data, void *offset, size_t len);
 
