@@ -1,5 +1,4 @@
 /*
- *
  * Atmel DataFlash probing
  *
  * Copyright (C) 2016 Jagan Teki <jteki@openedev.com>
@@ -7,8 +6,10 @@
  * Haikun Wang (haikun.wang@freescale.com)
  *
  * SPDX-License-Identifier:	GPL-2.0+
-*/
+ */
+
 #include <common.h>
+#include <div64.h>
 #include <dm.h>
 #include <errno.h>
 #include <fdtdec.h>
@@ -67,7 +68,6 @@
 #define OP_WRITE_SECURITY_REVC	0x9A
 #define OP_WRITE_SECURITY	0x9B	/* revision D */
 
-
 struct dataflash {
 	uint8_t			command[16];
 
@@ -77,9 +77,7 @@ struct dataflash {
 	struct spi_slave	*spi;
 };
 
-/*
- * Return the status of the DataFlash device.
- */
+/* Return the status of the DataFlash device */
 static inline int dataflash_status(struct spi_slave *spi)
 {
 	int ret;
@@ -118,9 +116,7 @@ static int dataflash_waitready(struct spi_slave *spi)
 	return -ETIME;
 }
 
-/*
- * Erase pages of flash.
- */
+/* Erase pages of flash */
 static int dataflash_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	struct dataflash	*priv = mtd->priv;
@@ -145,7 +141,7 @@ static int dataflash_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 	status = spi_claim_bus(spi);
 	if (status) {
-		debug("SPI DATAFLASH: unable to claim SPI bus\n");
+		debug("dataflash: unable to claim SPI bus\n");
 		return status;
 	}
 
@@ -231,7 +227,7 @@ static int dataflash_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 	status = spi_claim_bus(spi);
 	if (status) {
-		debug("SPI DATAFLASH: unable to claim SPI bus\n");
+		debug("dataflash: unable to claim SPI bus\n");
 		return status;
 	}
 
@@ -290,7 +286,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 	status = spi_claim_bus(spi);
 	if (status) {
-		debug("SPI DATAFLASH: unable to claim SPI bus\n");
+		debug("dataflash: unable to claim SPI bus\n");
 		return status;
 	}
 
@@ -387,7 +383,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
 
 		/* Check result of the compare operation */
 		if (status & (1 << 6)) {
-			printf("SPI DataFlash: write compare page %u, err %d\n",
+			printf("dataflash: write compare page %u, err %d\n",
 			       pageaddr, status);
 			remaining = 0;
 			status = -EIO;
@@ -551,7 +547,7 @@ static struct flash_info *jedec_probe(struct spi_slave *spi)
 			if (info->flags & SUP_POW2PS) {
 				status = dataflash_status(spi);
 				if (status < 0) {
-					debug("SPI DataFlash: status error %d\n",
+					debug("dataflash: status error %d\n",
 					      status);
 					return NULL;
 				}
@@ -573,10 +569,8 @@ static struct flash_info *jedec_probe(struct spi_slave *spi)
 	 * size (it might be binary) even when we can tell which density
 	 * class is involved (legacy chip id scheme).
 	 */
-	printf("SPI DataFlash: Unsupported flash IDs: ");
-	printf("manuf %02x, jedec %04x, ext_jedec %04x\n",
-	       id[0], jedec, id[3] << 8 | id[4]);
-	return NULL;
+	printf("dataflash: JEDEC id %06x not handled\n", jedec);
+	return ERR_PTR(-ENODEV);
 }
 
 /*
@@ -593,7 +587,7 @@ static struct flash_info *jedec_probe(struct spi_slave *spi)
  *   AT45DB0642  64Mbit  (8M)    xx111xxx (0x3c)   8192   1056     11
  *   AT45DB1282  128Mbit (16M)   xx0100xx (0x10)  16384   1056     11
  */
-static int spi_dataflash_probe(struct udevice *dev)
+static int dataflash_probe(struct udevice *dev)
 {
 	struct spi_slave	*spi = dev_get_parent_priv(dev);
 	struct flash_info	*info;
@@ -621,19 +615,19 @@ static int spi_dataflash_probe(struct udevice *dev)
 			goto err_status;
 	}
 
-	/*
+       /*
 	* Older chips support only legacy commands, identifing
 	* capacity using bits in the status byte.
 	*/
 	status = dataflash_status(spi);
 	if (status <= 0 || status == 0xff) {
-		printf("SPI DataFlash: read status error %d\n", status);
+		printf("dataflash: read status error %d\n", status);
 		if (status == 0 || status == 0xff)
 			status = -ENODEV;
 		goto err_jedec_probe;
 	}
 
-	/*
+       /*
 	* if there's a device there, assume it's dataflash.
 	* board setup should have set spi->max_speed_max to
 	* match f(car) for continuous reads, mode 0 or 3.
@@ -663,8 +657,7 @@ static int spi_dataflash_probe(struct udevice *dev)
 		break;
 	/* obsolete AT45DB1282 not (yet?) supported */
 	default:
-		dev_info(&spi->dev, "unsupported device (%x)\n",
-			 status & 0x3c);
+		printf("dataflash: unsupported device (%x)\n", status & 0x3c);
 		status = -ENODEV;
 		goto err_status;
 	}
@@ -678,16 +671,16 @@ err_jedec_probe:
 	return status;
 }
 
-static const struct udevice_id spi_dataflash_ids[] = {
+static const struct udevice_id dataflash_ids[] = {
 	{ .compatible = "atmel,at45", },
 	{ .compatible = "atmel,dataflash", },
 	{ }
 };
 
-U_BOOT_DRIVER(spi_dataflash) = {
-	.name		= "spi_dataflash",
+U_BOOT_DRIVER(mtd_dataflash) = {
+	.name		= "mtd_dataflash",
 	.id		= UCLASS_MTD,
-	.of_match	= spi_dataflash_ids,
-	.probe		= spi_dataflash_probe,
+	.of_match	= dataflash_ids,
+	.probe		= dataflash_probe,
 	.priv_auto_alloc_size = sizeof(struct dataflash),
 };
