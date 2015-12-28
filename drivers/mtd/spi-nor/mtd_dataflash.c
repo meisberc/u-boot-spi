@@ -360,7 +360,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
 			return status;
 		}
 
-#ifdef CONFIG_SPI_DATAFLASH_WRITE_VERIFY
+#ifdef CONFIG_MTD_DATAFLASH_WRITE_VERIFY
 		/* (3) Compare to Buffer1 */
 		addr = pageaddr << priv->page_offset;
 		command[0] = OP_COMPARE_BUF1;
@@ -392,7 +392,7 @@ static int dataflash_write(struct mtd_info *mtd, loff_t to, size_t len,
 			status = 0;
 		}
 
-#endif	/* CONFIG_SPI_DATAFLASH_WRITE_VERIFY */
+#endif	/* CONFIG_MTD_DATAFLASH_WRITE_VERIFY */
 		remaining = remaining - writelen;
 		pageaddr++;
 		offset = 0;
