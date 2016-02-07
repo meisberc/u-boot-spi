@@ -181,7 +181,7 @@ static int spi_nor_wait_till_ready(struct spi_nor *nor, unsigned long timeout)
 	return -ETIMEDOUT;
 }
 
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 static int spi_nor_write_bar(struct spi_nor *nor, u32 offset)
 {
 	u8 bank_sel;
@@ -514,7 +514,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &erase_addr);
 #endif
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 		ret = spi_nor_write_bar(nor, erase_addr);
 		if (ret < 0)
 			return ret;
@@ -577,7 +577,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &write_addr);
 #endif
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 		ret = spi_nor_write_bar(nor, write_addr);
 		if (ret < 0)
 			return ret;
@@ -647,7 +647,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &read_addr);
 #endif
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 		ret = spi_nor_write_bar(nor, read_addr);
 		if (ret < 0)
 			return ret;
@@ -1103,7 +1103,7 @@ int spi_nor_scan(struct spi_nor *nor)
 	}
 
 	/* Configure the BAR - discover bank cmds and read current bank */
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	ret = spi_nor_read_bar(nor, info);
 	if (ret < 0)
 		return ret;
@@ -1127,13 +1127,13 @@ int spi_nor_scan(struct spi_nor *nor)
 	puts("\n");
 #endif
 
-#ifndef CONFIG_SPI_FLASH_BAR
+#ifndef CONFIG_SPI_NOR_BAR
 	if (((nor->dual == SNOR_DUAL_SINGLE) &&
 	     (mtd->size > SNOR_16MB_BOUN)) ||
 	     ((nor->dual > SNOR_DUAL_SINGLE) &&
 	     (mtd->size > SNOR_16MB_BOUN << 1))) {
 		puts("spi-nor: Warning - Only lower 16MiB accessible,");
-		puts(" Full access #define CONFIG_SPI_FLASH_BAR\n");
+		puts(" Full access #define CONFIG_SPI_NOR_BAR\n");
 	}
 #endif
 
