@@ -16,3 +16,4 @@ obj-$(CONFIG_DM_MTD_SPI_NOR)	+= spi-nor-probe.o
 endif
 
 obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
+obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
