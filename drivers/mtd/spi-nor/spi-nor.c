@@ -7,6 +7,7 @@
  */
 
 #include <common.h>
+#include <div64.h>
 #include <dm.h>
 #include <errno.h>
 #include <malloc.h>
@@ -14,6 +15,7 @@
 
 #include <linux/math64.h>
 #include <linux/log2.h>
+#include <linux/mtd/mtd.h>
 #include <linux/mtd/spi-nor.h>
 
 DECLARE_GLOBAL_DATA_PTR;
@@ -209,10 +211,11 @@ bar_end:
 
 static int spi_nor_read_bar(struct spi_nor *nor, const struct spi_nor_info *info)
 {
+	struct mtd_info *mtd = nor->mtd;
 	u8 curr_bank = 0;
 	int ret;
 
-	if (flash->size <= SNOR_16MB_BOUN)
+	if (mtd->size <= SNOR_16MB_BOUN)
 		goto bar_end;
 
 	switch (JEDEC_MFR(info)) {
@@ -240,12 +243,12 @@ bar_end:
 #ifdef CONFIG_SF_DUAL_FLASH
 static void spi_nor_dual(struct spi_nor *nor, u32 *addr)
 {
-	struct spi_flash *flash = nor->flash;
+	struct mtd_info *mtd = nor->mtd;
 
 	switch (nor->dual) {
 	case SNOR_DUAL_STACKED:
-		if (*addr >= (flash->size >> 1)) {
-			*addr -= flash->size >> 1;
+		if (*addr >= (mtd->size >> 1)) {
+			*addr -= mtd->size >> 1;
 			nor->flags |= SNOR_F_U_PAGE;
 		} else {
 			nor->flags &= ~SNOR_F_U_PAGE;
@@ -263,8 +266,9 @@ static void spi_nor_dual(struct spi_nor *nor, u32 *addr)
 
 #if defined(CONFIG_SPI_FLASH_STMICRO) || defined(CONFIG_SPI_FLASH_SST)
 static void stm_get_locked_range(struct spi_nor *nor, u8 sr, loff_t *ofs,
-				 u32 *len)
+				 uint64_t *len)
 {
+	struct mtd_info *mtd = nor->mtd;
 	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
 	int shift = ffs(mask) - 1;
 	int pow;
@@ -275,40 +279,23 @@ static void stm_get_locked_range(struct spi_nor *nor, u8 sr, loff_t *ofs,
 		*len = 0;
 	} else {
 		pow = ((sr & mask) ^ mask) >> shift;
-		*len = flash->size >> pow;
-		*ofs = flash->size - *len;
+		*len = mtd->size >> pow;
+		*ofs = mtd->size - *len;
 	}
 }
 
 /*
  * Return 1 if the entire region is locked, 0 otherwise
  */
-static int stm_is_locked_sr(struct spi_nor *nor, u32 ofs, u32 len, u8 sr)
+static int stm_is_locked_sr(struct spi_nor *nor, loff_t ofs, uint64_t len,
+			    u8 sr)
 {
 	loff_t lock_offs;
-	u32 lock_len;
+	uint64_t lock_len;
 
 	stm_get_locked_range(nor, sr, &lock_offs, &lock_len);
 
 	return (ofs + len <= lock_offs + lock_len) && (ofs >= lock_offs);
-}
-
-/*
- * Check if a region of the flash is (completely) locked. See stm_lock() for
- * more info.
- *
- * Returns 1 if entire region is locked, 0 if any portion is unlocked, and
- * negative on errors.
- */
-static int stm_is_locked(struct spi_nor *nor, u32 ofs, size_t len)
-{
-	int status;
-
-	status = read_sr(nor);
-	if (status < 0)
-		return status;
-
-	return stm_is_locked_sr(nor, ofs, len, status);
 }
 
 /*
@@ -334,9 +321,10 @@ static int stm_is_locked(struct spi_nor *nor, u32 ofs, size_t len)
  *
  * Returns negative on errors, 0 on success.
  */
-static int stm_lock(struct spi_nor *nor, u32 ofs, size_t len)
+static int stm_lock(struct spi_nor *nor, loff_t ofs, uint64_t len)
 {
-	u8 status_old, status_new;
+	struct mtd_info *mtd = nor->mtd;
+	int status_old, status_new;
 	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
 	u8 shift = ffs(mask) - 1, pow, val;
 
@@ -345,12 +333,12 @@ static int stm_lock(struct spi_nor *nor, u32 ofs, size_t len)
 		return status_old;
 
 	/* SPI NOR always locks to the end */
-	if (ofs + len != flash->size) {
+	if (ofs + len != mtd->size) {
 		/* Does combined region extend to end? */
-		if (!stm_is_locked_sr(nor, ofs + len, flash->size - ofs - len,
+		if (!stm_is_locked_sr(nor, ofs + len, mtd->size - ofs - len,
 				      status_old))
 			return -EINVAL;
-		len = flash->size - ofs;
+		len = mtd->size - ofs;
 	}
 
 	/*
@@ -362,11 +350,10 @@ static int stm_lock(struct spi_nor *nor, u32 ofs, size_t len)
 	 *
 	 *   pow = ceil(log2(size / len)) = log2(size) - floor(log2(len))
 	 */
-	pow = ilog2(flash->size) - ilog2(len);
+	pow = ilog2(mtd->size) - ilog2(len);
 	val = mask - (pow << shift);
 	if (val & ~mask)
 		return -EINVAL;
-
 	/* Don't "lock" with no region! */
 	if (!(val & mask))
 		return -EINVAL;
@@ -386,20 +373,22 @@ static int stm_lock(struct spi_nor *nor, u32 ofs, size_t len)
  *
  * Returns negative on errors, 0 on success.
  */
-static int stm_unlock(struct spi_nor *nor, u32 ofs, size_t len)
+static int stm_unlock(struct spi_nor *nor, loff_t ofs, uint64_t len)
 {
-	uint8_t status_old, status_new;
+	struct mtd_info *mtd = nor->mtd;
+	int status_old, status_new;
 	u8 mask = SR_BP2 | SR_BP1 | SR_BP0;
 	u8 shift = ffs(mask) - 1, pow, val;
 
 	status_old = read_sr(nor);
-	if (status_old  < 0)
+	if (status_old < 0)
 		return status_old;
 
 	/* Cannot unlock; would unlock larger region than requested */
-	if (stm_is_locked_sr(nor, status_old, ofs - flash->erase_size,
-			     nor->erase_size))
+	if (stm_is_locked_sr(nor, status_old, ofs - mtd->erasesize,
+			     mtd->erasesize))
 		return -EINVAL;
+
 	/*
 	 * Need largest pow such that:
 	 *
@@ -409,8 +398,8 @@ static int stm_unlock(struct spi_nor *nor, u32 ofs, size_t len)
 	 *
 	 *   pow = floor(log2(size / len)) = log2(size) - ceil(log2(len))
 	 */
-	pow = ilog2(flash->size) - order_base_2(flash->size - (ofs + len));
-	if (ofs + len == flash->size) {
+	pow = ilog2(mtd->size) - order_base_2(mtd->size - (ofs + len));
+	if (ofs + len == mtd->size) {
 		val = 0; /* fully unlocked */
 	} else {
 		val = mask - (pow << shift);
@@ -428,7 +417,46 @@ static int stm_unlock(struct spi_nor *nor, u32 ofs, size_t len)
 	write_enable(nor);
 	return write_sr(nor, status_new);
 }
+
+/*
+ * Check if a region of the flash is (completely) locked. See stm_lock() for
+ * more info.
+ *
+ * Returns 1 if entire region is locked, 0 if any portion is unlocked, and
+ * negative on errors.
+ */
+static int stm_is_locked(struct spi_nor *nor, loff_t ofs, uint64_t len)
+{
+	int status;
+
+	status = read_sr(nor);
+	if (status < 0)
+		return status;
+
+	return stm_is_locked_sr(nor, ofs, len, status);
+}
 #endif
+
+static int spi_nor_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+{
+	struct spi_nor *nor = mtd->priv;
+
+	return nor->flash_lock(nor, ofs, len);
+}
+
+static int spi_nor_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+{
+	struct spi_nor *nor = mtd->priv;
+
+	return nor->flash_unlock(nor, ofs, len);
+}
+
+static int spi_nor_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
+{
+	struct spi_nor *nor = mtd->priv;
+
+	return nor->flash_is_locked(nor, ofs, len);
+}
 
 static const struct spi_nor_info *spi_nor_id(struct spi_nor *nor)
 {
@@ -455,30 +483,32 @@ static const struct spi_nor_info *spi_nor_id(struct spi_nor *nor)
 	return ERR_PTR(-ENODEV);
 }
 
-static int spi_nor_erase(struct spi_flash *flash, u32 offset, size_t len)
+static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
-	struct spi_nor *nor = flash->nor;
-	u32 erase_size, erase_addr;
+	struct spi_nor *nor = mtd->priv;
+	u32 addr, len, erase_addr;
 	u8 cmd[SNOR_MAX_CMD_SIZE];
+	uint32_t rem;
 	int ret = -1;
 
-	erase_size = nor->erase_size;
-	if (offset % erase_size || len % erase_size) {
-		debug("spi-nor: Erase offset/length not multiple of erase size\n");
-		return -1;
-	}
+	div_u64_rem(instr->len, mtd->erasesize, &rem);
+	if (rem)
+		return -EINVAL;
 
-	if (flash->flash_is_locked) {
-		if (flash->flash_is_locked(flash, offset, len) > 0) {
+	addr = instr->addr;
+	len = instr->len;
+
+	if (mtd->_is_locked) {
+		if (mtd->_is_locked(mtd, addr, len) > 0) {
 			printf("offset 0x%x is protected and cannot be erased\n",
-			       offset);
+			       addr);
 			return -EINVAL;
 		}
 	}
 
-	cmd[0] = flash->erase_opcode;
+	cmd[0] = nor->erase_opcode;
 	while (len) {
-		erase_addr = offset;
+		erase_addr = addr;
 
 #ifdef CONFIG_SF_DUAL_FLASH
 		if (nor->dual > SNOR_DUAL_SINGLE)
@@ -498,38 +528,46 @@ static int spi_nor_erase(struct spi_flash *flash, u32 offset, size_t len)
 
 		ret = nor->write(nor, cmd, sizeof(cmd), NULL, 0);
 		if (ret < 0)
-			break;
+			goto erase_err;
 
 		ret = spi_nor_wait_till_ready(nor, SNOR_READY_WAIT_ERASE);
 		if (ret < 0)
-			return ret;
+			goto erase_err;
 
-		offset += erase_size;
-		len -= erase_size;
+		addr += mtd->erasesize;
+		len -= mtd->erasesize;
 	}
 
+	write_disable(nor);
+
+	instr->state = MTD_ERASE_DONE;
+	mtd_erase_callback(instr);
+
+	return ret;
+
+erase_err:
+	instr->state = MTD_ERASE_FAILED;
 	return ret;
 }
 
-int spi_nor_write(struct spi_flash *flash, u32 offset,
-		  size_t len, const void *buf)
+static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
+			 size_t *retlen, const u_char *buf)
 {
-	struct spi_nor *nor = flash->nor;
-	unsigned long byte_addr, page_size;
-	u32 write_addr;
+	struct spi_nor *nor = mtd->priv;
+	u32 byte_addr, page_size, write_addr;
 	size_t chunk_len, actual;
 	u8 cmd[SNOR_MAX_CMD_SIZE];
 	int ret = -1;
 
-	page_size = nor->page_size;
-
-	if (flash->flash_is_locked) {
-		if (flash->flash_is_locked(flash, offset, len) > 0) {
-			printf("offset 0x%x is protected and cannot be written\n",
+	if (mtd->_is_locked) {
+		if (mtd->_is_locked(mtd, offset, len) > 0) {
+			printf("offset 0x%llx is protected and cannot be written\n",
 			       offset);
 			return -EINVAL;
 		}
 	}
+
+	page_size = nor->page_size;
 
 	cmd[0] = nor->program_opcode;
 	for (actual = 0; actual < len; actual += chunk_len) {
@@ -568,14 +606,16 @@ int spi_nor_write(struct spi_flash *flash, u32 offset,
 			return ret;
 
 		offset += chunk_len;
+		*retlen += chunk_len;
 	}
 
 	return ret;
 }
 
-int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
+static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
+			size_t *retlen, u_char *buf)
 {
-	struct spi_nor *nor = flash->nor;
+	struct spi_nor *nor = mtd->priv;
 	u32 remain_len, read_len, read_addr;
 	u8 *cmd, cmdsz;
 	int bank_sel = 0;
@@ -583,7 +623,7 @@ int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
 
 	/* Handle memory-mapped SPI */
 	if (nor->memory_map) {
-		ret = nor->read_mmap(nor, data, nor->memory_map + offset, len);
+		ret = nor->read_mmap(nor, buf, nor->memory_map + from, len);
 		if (ret) {
 			debug("spi-nor: mmap read failed\n");
 			return ret;
@@ -601,7 +641,7 @@ int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
 
 	cmd[0] = nor->read_opcode;
 	while (len) {
-		read_addr = offset;
+		read_addr = from;
 
 #ifdef CONFIG_SF_DUAL_FLASH
 		if (nor->dual > SNOR_DUAL_SINGLE)
@@ -614,7 +654,7 @@ int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
 		bank_sel = nor->bank_curr;
 #endif
 		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
-				(bank_sel + 1)) - offset;
+				(bank_sel + 1)) - from;
 		if (len < remain_len)
 			read_len = len;
 		else
@@ -622,13 +662,14 @@ int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
 
 		spi_nor_addr(read_addr, cmd);
 
-		ret = nor->read(nor, cmd, cmdsz, data, read_len);
+		ret = nor->read(nor, cmd, cmdsz, buf, read_len);
 		if (ret < 0)
 			break;
 
-		offset += read_len;
+		from += read_len;
 		len -= read_len;
-		data += read_len;
+		buf += read_len;
+		*retlen += read_len;
 	}
 
 	free(cmd);
@@ -636,7 +677,8 @@ int spi_nor_read(struct spi_flash *flash, u32 offset, size_t len, void *data)
 }
 
 #ifdef CONFIG_SPI_FLASH_SST
-static int sst_byte_write(struct spi_nor *nor, u32 offset, const void *buf)
+static int sst_byte_write(struct spi_nor *nor, u32 offset,
+			  const void *buf, size_t *retlen)
 {
 	int ret;
 	u8 cmd[4] = {
@@ -657,12 +699,15 @@ static int sst_byte_write(struct spi_nor *nor, u32 offset, const void *buf)
 	if (ret)
 		return ret;
 
+	*retlen += 1;
+
 	return spi_nor_wait_till_ready(nor, SNOR_READY_WAIT_PROG);
 }
 
-int sst_write_wp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
+static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
+			size_t *retlen, const u_char *buf)
 {
-	struct spi_nor *nor = flash->nor;
+	struct spi_nor *nor = mtd->priv;
 	size_t actual, cmd_len;
 	int ret;
 	u8 cmd[4];
@@ -670,7 +715,7 @@ int sst_write_wp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
 	/* If the data is not word aligned, write out leading single byte */
 	actual = offset % 2;
 	if (actual) {
-		ret = sst_byte_write(nor, offset, buf);
+		ret = sst_byte_write(nor, offset, buf, retlen);
 		if (ret)
 			goto done;
 	}
@@ -687,7 +732,7 @@ int sst_write_wp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
 	cmd[3] = offset;
 
 	for (; actual < len - 1; actual += 2) {
-		debug("spi-nor: 0x%p => cmd = { 0x%02x 0x%06x }\n",
+		debug("spi-nor: 0x%p => cmd = { 0x%02x 0x%06llx }\n",
 		      buf + actual, cmd[0], offset);
 
 		ret = nor->write(nor, cmd, cmd_len, buf + actual, 2);
@@ -702,6 +747,7 @@ int sst_write_wp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
 
 		cmd_len = 1;
 		offset += 2;
+		*retlen += 2;
 	}
 
 	if (!ret)
@@ -709,20 +755,21 @@ int sst_write_wp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
 
 	/* If there is a single trailing byte, write it out */
 	if (!ret && actual != len)
-		ret = sst_byte_write(nor, offset, buf + actual);
+		ret = sst_byte_write(nor, offset, buf + actual, retlen);
 
  done:
 	return ret;
 }
 
-int sst_write_bp(struct spi_nor *nor, u32 offset, size_t len, const void *buf)
+static int sst_write_bp(struct mtd_info *mtd, loff_t offset, size_t len,
+			size_t *retlen, const u_char *buf)
 {
-	struct spi_nor *nor = flash->nor;
+	struct spi_nor *nor = mtd->priv;
 	size_t actual;
 	int ret;
 
 	for (actual = 0; actual < len; actual++) {
-		ret = sst_byte_write(nor, offset, buf + actual);
+		ret = sst_byte_write(nor, offset, buf + actual, retlen);
 		if (ret) {
 			debug("spi-nor: sst byte program failed\n");
 			break;
@@ -853,6 +900,7 @@ static int set_quad_mode(struct spi_nor *nor, const struct spi_nor_info *info)
 #if CONFIG_IS_ENABLED(OF_CONTROL)
 int spi_nor_decode_fdt(const void *blob, struct spi_nor *nor)
 {
+	struct mtd_info *mtd = nor->mtd;
 	fdt_addr_t addr;
 	fdt_size_t size;
 	int node;
@@ -868,7 +916,7 @@ int spi_nor_decode_fdt(const void *blob, struct spi_nor *nor)
 		return 0;
 	}
 
-	if (flash->size != size) {
+	if (mtd->size != size) {
 		debug("%s: Memory map must cover entire device\n", __func__);
 		return -1;
 	}
@@ -891,6 +939,7 @@ static int spi_nor_check(struct spi_nor *nor)
 
 int spi_nor_scan(struct spi_nor *nor)
 {
+	struct mtd_info *mtd = nor->mtd;
 	const struct spi_nor_info *info = NULL;
 	static u8 flash_read_cmd[] = {
 		SNOR_OP_READ,
@@ -921,7 +970,13 @@ int spi_nor_scan(struct spi_nor *nor)
 		write_sr(nor, 0);
 	}
 
-	flash->name = info->name;
+	mtd->name = info->name;
+	mtd->priv = nor;
+	mtd->type = MTD_NORFLASH;
+	mtd->writesize = 1;
+	mtd->flags = MTD_CAP_NORFLASH;
+	mtd->_erase = spi_nor_erase;
+	mtd->_read = spi_nor_read;
 
 	if (info->flags & USE_FSR)
 		nor->flags |= SNOR_F_USE_FSR;
@@ -929,15 +984,13 @@ int spi_nor_scan(struct spi_nor *nor)
 	if (info->flags & SST_WRITE)
 		nor->flags |= SNOR_F_SST_WRITE;
 
-	flash->write = spi_nor_write;
-	flash->erase = spi_nor_erase;
-	flash->read = spi_nor_read;
+	mtd->_write = spi_nor_write;
 #if defined(CONFIG_SPI_FLASH_SST)
 	if (nor->flags & SNOR_F_SST_WRITE) {
 		if (nor->mode & SNOR_WRITE_1_1_BYTE)
-			flash->write = sst_write_bp;
+			mtd->_write = sst_write_bp;
 		else
-			flash->write = sst_write_wp;
+			mtd->_write = sst_write_wp;
 	}
 #endif
 
@@ -951,10 +1004,10 @@ int spi_nor_scan(struct spi_nor *nor)
 	}
 #endif
 
-	if (flash->flash_lock && flash->flash_unlock && flash->flash_is_locked) {
-		flash->flash_lock = spi_nor_lock;
-		flash->flash_unlock = spi_nor_unlock;
-		flash->flash_is_locked = spi_nor_is_locked;
+	if (nor->flash_lock && nor->flash_unlock && nor->flash_is_locked) {
+		mtd->_lock = spi_nor_lock;
+		mtd->_unlock = spi_nor_unlock;
+		mtd->_is_locked = spi_nor_is_locked;
 	}
 
 	/* Compute the flash size */
@@ -972,30 +1025,30 @@ int spi_nor_scan(struct spi_nor *nor)
 			nor->page_size = 512;
 	}
 	nor->page_size <<= nor->shift;
-	flash->sector_size = info->sector_size << nor->shift;
-	flash->size = flash->sector_size * info->n_sectors << nor->shift;
+	mtd->writebufsize = nor->page_size;
+	mtd->size = (info->sector_size * info->n_sectors) << nor->shift;
 #ifdef CONFIG_SF_DUAL_FLASH
 	if (nor->dual & SNOR_DUAL_STACKED)
-		flash->size <<= 1;
+		mtd->size <<= 1;
 #endif
 
 #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
 	/* prefer "small sector" erase if possible */
 	if (info->flags & SECT_4K) {
 		nor->erase_opcode = SNOR_OP_BE_4K;
-		nor->erase_size = 4096 << nor->shift;
+		mtd->erasesize = 4096 << nor->shift;
 	} else if (info->flags & SECT_4K_PMC) {
 		nor->erase_opcode = SNOR_OP_BE_4K_PMC;
-		nor->erase_size = 4096;
+		mtd->erasesize = 4096;
 	} else
 #endif
 	{
 		nor->erase_opcode = SNOR_OP_SE;
-		nor->erase_size = flash->sector_size;
+		mtd->erasesize = info->sector_size << nor->shift;
 	}
 
-	/* Now erase size becomes valid sector size */
-	flash->sector_size = nor->erase_size;
+	if (info->flags & SPI_NOR_NO_ERASE)
+		mtd->flags |= MTD_NO_ERASE;
 
 	/* Look for the fastest read cmd */
 	cmd = fls(info->flash_read & nor->read_mode);
@@ -1006,6 +1059,10 @@ int spi_nor_scan(struct spi_nor *nor)
 		/* Go for default supported read cmd */
 		nor->read_opcode = SNOR_OP_READ_FAST;
 	}
+
+	/* Some devices cannot do fast-read */
+	if (info->flags & SPI_NOR_NO_FR)
+		nor->read_opcode = SNOR_OP_READ;
 
 	/* Not require to look for fastest only two write cmds yet */
 	if (info->flags & SNOR_WRITE_QUAD && nor->mode & SNOR_WRITE_1_1_4)
@@ -1061,10 +1118,10 @@ int spi_nor_scan(struct spi_nor *nor)
 #endif
 
 #ifndef CONFIG_SPL_BUILD
-	printf("spi-nor: detected %s with page size ", flash->name);
+	printf("spi-nor: detected %s with page size ", mtd->name);
 	print_size(nor->page_size, ", erase size ");
-	print_size(nor->erase_size, ", total ");
-	print_size(flash->size, "");
+	print_size(mtd->erasesize, ", total ");
+	print_size(mtd->size, "");
 	if (nor->memory_map)
 		printf(", mapped at %p", nor->memory_map);
 	puts("\n");
@@ -1072,9 +1129,9 @@ int spi_nor_scan(struct spi_nor *nor)
 
 #ifndef CONFIG_SPI_FLASH_BAR
 	if (((nor->dual == SNOR_DUAL_SINGLE) &&
-	     (flash->size > SNOR_16MB_BOUN)) ||
+	     (mtd->size > SNOR_16MB_BOUN)) ||
 	     ((nor->dual > SNOR_DUAL_SINGLE) &&
-	     (flash->size > SNOR_16MB_BOUN << 1))) {
+	     (mtd->size > SNOR_16MB_BOUN << 1))) {
 		puts("spi-nor: Warning - Only lower 16MiB accessible,");
 		puts(" Full access #define CONFIG_SPI_FLASH_BAR\n");
 	}
