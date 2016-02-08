@@ -52,7 +52,7 @@ int saveenv(void)
 	char	*saved_buffer = NULL, flag = OBSOLETE_FLAG;
 	u32	saved_size, saved_offset, sector = 1;
 	int	ret;
-#ifdef CONFIG_DM_SPI_FLASH
+#if defined(CONFIG_DM_SPI_FLASH) || defined (CONFIG_DM_MTD_SPI_NOR)
 	struct udevice *new;
 
 	ret = spi_flash_probe_bus_cs(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
@@ -242,7 +242,7 @@ int saveenv(void)
 	char	*saved_buffer = NULL;
 	int	ret = 1;
 	env_t	env_new;
-#ifdef CONFIG_DM_SPI_FLASH
+#if defined(CONFIG_DM_SPI_FLASH) || defined (CONFIG_DM_MTD_SPI_NOR)
 	struct udevice *new;
 
 	ret = spi_flash_probe_bus_cs(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
