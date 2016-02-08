@@ -6,6 +6,8 @@
 ifdef CONFIG_MTD_SPI_NOR
 obj-y += spi-nor.o
 obj-y += spi-nor-ids.o
+
+obj-$(CONFIG_DM_MTD_SPI_NOR)	+= spi-nor-probe.o
 endif
 
 obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
