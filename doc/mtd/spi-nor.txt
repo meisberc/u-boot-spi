@@ -1,0 +1,81 @@
+                          SPI NOR framework
+               ============================================
+
+Part I - Why do we need this framework?
+---------------------------------------
+
+SPI bus controllers (drivers/spi/) only deal with streams of bytes; the bus
+controller operates agnostic of the specific device attached. However, some
+controllers (such as Freescale's QuadSPI controller) cannot easily handle
+arbitrary streams of bytes, but rather are designed specifically for SPI NOR.
+
+In particular, Freescale's QuadSPI controller must know the NOR commands to
+find the right LUT sequence. Unfortunately, the SPI subsystem has no notion of
+opcodes, addresses, or data payloads; a SPI controller simply knows to send or
+receive bytes (Tx and Rx). Therefore, we must define a new layering scheme under
+which the controller driver is aware of the opcodes, addressing, and other
+details of the SPI NOR protocol.
+
+Part II - How does the framework work?
+--------------------------------------
+
+This framework just adds a new layer between the MTD and the SPI bus driver.
+With this new layer, the SPI NOR controller driver does not depend on the
+m25p80 code anymore.
+
+Before SPI-NOR:
+
+	-----------------------
+		cmd_sf.c
+	-----------------------
+		spi_flash.c
+	-----------------------
+		sf_probe.c
+	-----------------------
+		spi-uclass
+	-----------------------
+		spi drivers
+	-----------------------
+		SPI NOR chip
+	-----------------------
+
+After SPI-NOR:
+
+	------------------------------
+		cmd_sf.c
+	------------------------------
+		spi-nor.c
+	-------------------------------
+	m25p80.c	spi nor drivers
+	-------------------------------
+	spi-uclass	SPI NOR chip
+	-------------------------------
+	spi drivers
+	-------------------------------
+	SPI NOR chip
+	-------------------------------
+
+SPI-NOR with MTD:
+
+	------------------------------
+		cmd_sf.c
+	------------------------------
+		MTD core
+	------------------------------
+		spi-nor.c
+	-------------------------------
+	m25p80.c	spi nor drivers
+	-------------------------------
+	spi-uclass	SPI NOR chip
+	-------------------------------
+	spi bus drivers
+	-------------------------------
+	SPI NOR chip
+	-------------------------------
+
+Part III - How can drivers use the framework?
+---------------------------------------------
+
+The main API is spi_nor_scan(). Before you call the hook, a driver should
+initialize the necessary fields for spi_nor{}. Please see
+drivers/mtd/spi-nor/spi-nor.c for detail.
