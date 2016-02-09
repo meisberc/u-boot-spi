@@ -1,3 +1,19 @@
+menuconfig MTD_SPI_NOR
+	tristate "SPI-NOR device support"
+	help
+	  This is the core SPI NOR framework which can be used to interact SPI-NOR
+	  to SPI driver interface layer and the SPI-NOR controller driver.
+
+	  Unlike normal/generic spi controllers, they are few controllers which are
+	  exclusively used to connect SPI-NOR devices, called SPI-NOR controllers.
+	  So technically these controllers shouldn't reside at drivers/spi as these
+	  may effect the generic SPI bus functionalities, so this SPI-NOR core acts
+	  as a common core framework between the generic SPI controller drivers vs
+	  SPI-NOR controller drivers for SPI-NOR device access. Note that from SPI-NOR
+	  core to SPI drivers there should be an interface layer.
+
+if MTD_SPI_NOR
+
 config MTD_M25P80
 	tristate "Support most SPI Flash chips (AT26DF, M25P, W25X, ...)"
 	help
@@ -13,3 +29,5 @@ config MTD_M25P80
 	  Set up your spi devices with the right board-specific platform data,
 	  if you want to specify device partitioning or to use a device which
 	  doesn't support the JEDEC ID instruction.
+
+endif # MTD_SPI_NOR
