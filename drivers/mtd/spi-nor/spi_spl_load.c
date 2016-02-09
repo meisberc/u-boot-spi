@@ -20,8 +20,7 @@
  * Load the kernel, check for a valid header we can parse, and if found load
  * the kernel and then device tree.
  */
-static int spi_load_image_os(struct spi_flash *flash,
-			     struct image_header *header)
+static int spi_load_image_os(spi_flash_t *flash, struct image_header *header)
 {
 	/* Read for a header, parse or error out. */
 	spi_flash_read(flash, CONFIG_SYS_SPI_KERNEL_OFFS, 0x40,
@@ -52,7 +51,7 @@ static int spi_load_image_os(struct spi_flash *flash,
 int spl_spi_load_image(void)
 {
 	int err = 0;
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 	struct image_header *header;
 
 	/*
