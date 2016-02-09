@@ -10,9 +10,9 @@
  */
 
 #include <common.h>
+#include <errno.h>
 #include <spi.h>
 #include <spi_flash.h>
-#include <errno.h>
 #include <spl.h>
 
 #ifdef CONFIG_SPL_OS_BOOT
