@@ -14,7 +14,7 @@
 
 void spi_spl_load_image(uint32_t offs, unsigned int size, void *vdst)
 {
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 
 	flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
 			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
@@ -38,7 +38,7 @@ void spi_boot(void)
 #ifndef CONFIG_FSL_CORENET
 	unsigned char *buf = NULL;
 #endif
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 
 	flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
 			CONFIG_ENV_SPI_MAX_HZ, CONFIG_ENV_SPI_MODE);
