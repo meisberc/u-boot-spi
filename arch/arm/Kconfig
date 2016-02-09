@@ -568,7 +568,6 @@ config ARCH_ZYNQ
 	select DM_SPI
 	select DM_SERIAL
 	select MTD
-	select DM_SPI_FLASH
 	select SPL_SEPARATE_BSS if SPL
 
 config ARCH_ZYNQMP
