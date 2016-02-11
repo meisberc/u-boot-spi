@@ -17,8 +17,7 @@
 #include <linux/err.h>
 #include <linux/math64.h>
 #include <linux/mtd/mtd.h>
-
-#include "sf_internal.h"
+#include <linux/mtd/spi-nor.h>
 
 /* reads can bypass the buffers */
 #define OP_READ_CONTINUOUS	0xE8
@@ -519,7 +518,7 @@ static struct flash_info *jedec_probe(struct spi_slave *spi)
 	uint8_t			id[5];
 	uint32_t		jedec;
 	struct flash_info	*info;
-	u8 cmd = CMD_READ_ID;
+	u8 cmd = SNOR_OP_RDID;
 	int status;
 
 	/*
