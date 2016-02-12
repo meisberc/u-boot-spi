@@ -87,11 +87,11 @@ config SANDBOX
 	select SYS_GENERIC_BOARD
 	select SUPPORT_OF_CONTROL
 	select DM
-	select DM_SPI_FLASH
 	select DM_SERIAL
 	select DM_I2C
 	select DM_SPI
 	select DM_GPIO
+	select MTD
 
 config SH
 	bool "SuperH architecture"
