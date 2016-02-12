@@ -148,6 +148,13 @@ static inline int spi_flash_protect(spi_flash_t *info, u32 ofs,
 
 #ifdef CONFIG_DM_MTD_SPI_NOR
 
+struct sandbox_state;
+
+int sandbox_sf_bind_emul(struct sandbox_state *state, int busnum, int cs,
+			 struct udevice *bus, int of_offset, const char *spec);
+
+void sandbox_sf_unbind_emul(struct sandbox_state *state, int busnum, int cs);
+
 int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
 			   unsigned int max_hz, unsigned int spi_mode,
 			   struct udevice **devp);
@@ -272,13 +279,6 @@ int sandbox_sf_bind_emul(struct sandbox_state *state, int busnum, int cs,
 void sandbox_sf_unbind_emul(struct sandbox_state *state, int busnum, int cs);
 
 #elif !defined(CONFIG_MTD_SPI_NOR)
-
-struct sandbox_state;
-
-int sandbox_sf_bind_emul(struct sandbox_state *state, int busnum, int cs,
-			 struct udevice *bus, int of_offset, const char *spec);
-
-void sandbox_sf_unbind_emul(struct sandbox_state *state, int busnum, int cs);
 
 struct spi_flash *spi_flash_probe(unsigned int bus, unsigned int cs,
 		unsigned int max_hz, unsigned int spi_mode);

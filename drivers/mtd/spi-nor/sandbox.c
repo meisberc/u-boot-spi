@@ -535,7 +535,7 @@ static const struct dm_spi_emul_ops sandbox_sf_emul_ops = {
 	.xfer          = sandbox_sf_xfer,
 };
 
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 static int sandbox_cmdline_cb_spi_sf(struct sandbox_state *state,
 				     const char *arg)
 {
