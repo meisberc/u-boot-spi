@@ -25,8 +25,8 @@ static int dfu_read_medium_sf(struct dfu_entity *dfu, u64 offset, void *buf,
 
 static u64 find_sector(struct dfu_entity *dfu, u64 start, u64 offset)
 {
-	return (lldiv((start + offset), dfu->data.sf.dev->sector_size)) *
-		dfu->data.sf.dev->sector_size;
+	return (lldiv((start + offset), dfu->data.sf.dev->erasesize)) *
+		dfu->data.sf.dev->erasesize;
 }
 
 static int dfu_write_medium_sf(struct dfu_entity *dfu,
@@ -36,7 +36,7 @@ static int dfu_write_medium_sf(struct dfu_entity *dfu,
 
 	ret = spi_flash_erase(dfu->data.sf.dev,
 			      find_sector(dfu, dfu->data.sf.start, offset),
-			      dfu->data.sf.dev->sector_size);
+			      dfu->data.sf.dev->erasesize);
 	if (ret)
 		return ret;
 
@@ -123,7 +123,7 @@ int dfu_fill_entity_sf(struct dfu_entity *dfu, char *devstr, char *s)
 		return -ENODEV;
 
 	dfu->dev_type = DFU_DEV_SF;
-	dfu->max_buf_size = dfu->data.sf.dev->sector_size;
+	dfu->max_buf_size = dfu->data.sf.dev->erasesize;
 
 	st = strsep(&s, " ");
 	if (!strcmp(st, "raw")) {

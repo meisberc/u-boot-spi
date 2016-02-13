@@ -93,7 +93,7 @@ int spi_flash_mtd_register(struct spi_flash *flash)
 
 	/* Only uniform flash devices for now */
 	sf_mtd_info.numeraseregions = 0;
-	sf_mtd_info.erasesize = flash->sector_size;
+	sf_mtd_info.erasesize = flash->erasesize;
 
 	return add_mtd_device(&sf_mtd_info);
 }

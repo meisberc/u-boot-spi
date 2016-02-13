@@ -53,8 +53,8 @@ static int sf_parse_len_arg(char *arg, ulong *len)
 	if (ep == arg || *ep != '\0')
 		return -1;
 
-	if (round_up_len && flash->sector_size > 0)
-		*len = ROUND(len_arg, flash->sector_size);
+	if (round_up_len && flash->erasesize > 0)
+		*len = ROUND(len_arg, flash->erasesize);
 	else
 		*len = len_arg;
 
@@ -171,10 +171,10 @@ static const char *spi_flash_update_block(struct spi_flash *flash, u32 offset,
 {
 	char *ptr = (char *)buf;
 
-	debug("offset=%#x, sector_size=%#x, len=%#zx\n",
-	      offset, flash->sector_size, len);
+	debug("offset=%#x, erasesize=%#x, len=%#zx\n",
+	      offset, flash->erasesize, len);
 	/* Read the entire sector so to allow for rewriting */
-	if (spi_flash_read(flash, offset, flash->sector_size, cmp_buf))
+	if (spi_flash_read(flash, offset, flash->erasesize, cmp_buf))
 		return "read";
 	/* Compare only what is meaningful (len) */
 	if (memcmp(cmp_buf, buf, len) == 0) {
@@ -184,15 +184,15 @@ static const char *spi_flash_update_block(struct spi_flash *flash, u32 offset,
 		return NULL;
 	}
 	/* Erase the entire sector */
-	if (spi_flash_erase(flash, offset, flash->sector_size))
+	if (spi_flash_erase(flash, offset, flash->erasesize))
 		return "erase";
 	/* If it's a partial sector, copy the data into the temp-buffer */
-	if (len != flash->sector_size) {
+	if (len != flash->erasesize) {
 		memcpy(cmp_buf, buf, len);
 		ptr = cmp_buf;
 	}
 	/* Write one complete sector */
-	if (spi_flash_write(flash, offset, flash->sector_size, ptr))
+	if (spi_flash_write(flash, offset, flash->erasesize, ptr))
 		return "write";
 
 	return NULL;
@@ -223,12 +223,12 @@ static int spi_flash_update(struct spi_flash *flash, u32 offset,
 
 	if (end - buf >= 200)
 		scale = (end - buf) / 100;
-	cmp_buf = memalign(ARCH_DMA_MINALIGN, flash->sector_size);
+	cmp_buf = memalign(ARCH_DMA_MINALIGN, flash->erasesize);
 	if (cmp_buf) {
 		ulong last_update = get_timer(0);
 
 		for (; buf < end && !err_oper; buf += todo, offset += todo) {
-			todo = min_t(size_t, end - buf, flash->sector_size);
+			todo = min_t(size_t, end - buf, flash->erasesize);
 			if (get_timer(last_update) > 100) {
 				printf("   \rUpdating, %zu%% %lu B/s",
 				       100 - (end - buf) / scale,
