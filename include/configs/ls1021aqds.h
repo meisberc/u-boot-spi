@@ -432,8 +432,6 @@ unsigned long get_board_ddr_clk(void);
 /* DM SPI */
 #if defined(CONFIG_FSL_DSPI) || defined(CONFIG_FSL_QSPI)
 #define CONFIG_CMD_SF
-#define CONFIG_DM_SPI_FLASH
-#define CONFIG_SPI_FLASH_DATAFLASH
 #endif
 #endif
 
