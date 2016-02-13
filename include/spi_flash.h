@@ -173,6 +173,8 @@ void spi_flash_free(spi_flash_t *flash);
 
 #else
 
+typedef struct spi_flash spi_flash_t;
+
 static inline int spi_flash_protect(struct spi_flash *flash, u32 ofs, u32 len,
 					bool prot)
 {

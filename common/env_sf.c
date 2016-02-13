@@ -43,7 +43,7 @@ DECLARE_GLOBAL_DATA_PTR;
 
 char *env_name_spec = "SPI Flash";
 
-static struct spi_flash *env_flash;
+static spi_flash_t *env_flash;
 
 #if defined(CONFIG_ENV_OFFSET_REDUND)
 int saveenv(void)
