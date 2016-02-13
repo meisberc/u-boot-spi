@@ -329,7 +329,7 @@ int spi_flash_cmd_erase_ops(struct spi_flash *flash, u32 offset, size_t len)
 	u8 cmd[SPI_FLASH_CMD_LEN];
 	int ret = -1;
 
-	erase_size = flash->erase_size;
+	erase_size = flash->erasesize;
 	if (offset % erase_size || len % erase_size) {
 		debug("SF: Erase offset/length not multiple of erase size\n");
 		return -1;
@@ -804,7 +804,7 @@ int stm_unlock(struct spi_flash *flash, u32 ofs, size_t len)
 		return ret;
 
 	/* Cannot unlock; would unlock larger region than requested */
-	if (stm_is_locked_sr(flash, ofs - flash->erase_size, flash->erase_size,
+	if (stm_is_locked_sr(flash, ofs - flash->erasesize, flash->erasesize,
 			     status_old))
 		return -EINVAL;
 	/*
@@ -1091,17 +1091,17 @@ int spi_flash_scan(struct spi_flash *flash)
 	/* Compute erase sector and command */
 	if (params->flags & SECT_4K) {
 		flash->erase_cmd = CMD_ERASE_4K;
-		flash->erase_size = 4096 << flash->shift;
+		flash->erasesize = 4096 << flash->shift;
 	} else if (params->flags & SECT_32K) {
 		flash->erase_cmd = CMD_ERASE_32K;
-		flash->erase_size = 32768 << flash->shift;
+		flash->erasesize = 32768 << flash->shift;
 	} else {
 		flash->erase_cmd = CMD_ERASE_64K;
-		flash->erase_size = flash->sector_size;
+		flash->erasesize = flash->sector_size;
 	}
 
 	/* Now erase size becomes valid sector size */
-	flash->sector_size = flash->erase_size;
+	flash->sector_size = flash->erasesize;
 
 	/* Look for the fastest read cmd */
 	cmd = fls(params->e_rd_cmd & spi->mode_rx);
@@ -1173,7 +1173,7 @@ int spi_flash_scan(struct spi_flash *flash)
 #ifndef CONFIG_SPL_BUILD
 	printf("SF: Detected %s with page size ", flash->name);
 	print_size(flash->page_size, ", erase size ");
-	print_size(flash->erase_size, ", total ");
+	print_size(flash->erasesize, ", total ");
 	print_size(flash->size, "");
 	if (flash->memory_map)
 		printf(", mapped at %p", flash->memory_map);

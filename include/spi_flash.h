@@ -40,7 +40,7 @@ struct spi_slave;
  * @size:		Total flash size
  * @page_size:		Write (page) size
  * @sector_size:	Sector size
- * @erase_size:		Erase size
+ * @erasesize:		Erase size
  * @bank_read_cmd:	Bank read cmd
  * @bank_write_cmd:	Bank write cmd
  * @bank_curr:		Current flash bank
@@ -73,7 +73,7 @@ struct spi_flash {
 	u32 size;
 	u32 page_size;
 	u32 sector_size;
-	u32 erase_size;
+	u32 erasesize;
 #ifdef CONFIG_SPI_FLASH_BAR
 	u8 bank_read_cmd;
 	u8 bank_write_cmd;
