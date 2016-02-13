@@ -37,7 +37,7 @@
 #define FIRM_ADDR3 (CONFIG_ENV_SECT_SIZE + 0x200 - sizeof(smac))
 #define FIRM_ADDR4 (CONFIG_ENV_SECT_SIZE + 0x400 - sizeof(smac))
 
-static struct spi_flash *flash;
+static spi_flash_t *flash;
 char smac[4][18];
 
 static int ishwaddr(char *hwaddr)

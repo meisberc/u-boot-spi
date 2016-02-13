@@ -147,7 +147,7 @@ void cs4340_upload_firmware(struct phy_device *phydev)
 	}
 #elif defined(CONFIG_SYS_CORTINA_FW_IN_SPIFLASH)
 	int ret;
-	struct spi_flash *ucode_flash;
+	spi_flash_t *ucode_flash;
 
 	addr = malloc(CONFIG_CORTINA_FW_LENGTH);
 	ucode_flash = spi_flash_probe(CONFIG_ENV_SPI_BUS, CONFIG_ENV_SPI_CS,
