@@ -1100,9 +1100,6 @@ int spi_flash_scan(struct spi_flash *flash)
 		flash->erasesize = flash->sector_size;
 	}
 
-	/* Now erase size becomes valid sector size */
-	flash->sector_size = flash->erasesize;
-
 	/* Look for the fastest read cmd */
 	cmd = fls(params->e_rd_cmd & spi->mode_rx);
 	if (cmd) {
