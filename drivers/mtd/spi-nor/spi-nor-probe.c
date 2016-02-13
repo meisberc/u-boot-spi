@@ -9,6 +9,8 @@
 #include <spi.h>
 #include <spi_flash.h>
 
+#include <dm/device-internal.h>
+
 /*
  * TODO(sjg@chromium.org): This is an old-style function. We should remove
  * it when all SPI flash drivers use dm
@@ -22,6 +24,11 @@ spi_flash_t *spi_flash_probe(unsigned int bus, unsigned int cs,
 		return NULL;
 
 	return dev_get_uclass_priv(dev);
+}
+
+void spi_flash_free(spi_flash_t *flash)
+{
+	device_remove(flash->dev);
 }
 
 int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
