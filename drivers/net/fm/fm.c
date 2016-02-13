@@ -367,7 +367,7 @@ int fm_init_common(int index, struct ccsr_fman *reg)
 			CONFIG_SYS_FMAN_FW_ADDR, rc);
 	}
 #elif defined(CONFIG_SYS_QE_FW_IN_SPIFLASH)
-	struct spi_flash *ucode_flash;
+	spi_flash_t *ucode_flash;
 	void *addr = malloc(CONFIG_SYS_QE_FMAN_FW_LENGTH);
 	int ret = 0;
 

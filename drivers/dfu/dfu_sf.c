@@ -63,14 +63,14 @@ static void dfu_free_entity_sf(struct dfu_entity *dfu)
 	spi_flash_free(dfu->data.sf.dev);
 }
 
-static struct spi_flash *parse_dev(char *devstr)
+static spi_flash_t *parse_dev(char *devstr)
 {
 	unsigned int bus;
 	unsigned int cs;
 	unsigned int speed = CONFIG_SF_DEFAULT_SPEED;
 	unsigned int mode = CONFIG_SF_DEFAULT_MODE;
 	char *s, *endp;
-	struct spi_flash *dev;
+	spi_flash_t *dev;
 
 	s = strsep(&devstr, ":");
 	if (!s || !*s || (bus = simple_strtoul(s, &endp, 0), *endp)) {

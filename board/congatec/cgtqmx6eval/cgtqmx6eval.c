@@ -1005,7 +1005,7 @@ static void conv_ascii(unsigned char *dst, unsigned char *src, int len)
 #define CFG_MFG_ADDR_OFFSET	(spi->size - SZ_16K)
 static bool is_2gb(void)
 {
-	struct spi_flash *spi;
+	spi_flash_t *spi;
 	int ret;
 	char buf[sizeof(struct mfgdata)];
 	struct mfgdata *data = (struct mfgdata *)buf;

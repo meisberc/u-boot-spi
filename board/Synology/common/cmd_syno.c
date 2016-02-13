@@ -27,7 +27,7 @@ static int do_syno_populate(int argc, char * const argv[])
 	unsigned int cs = CONFIG_SF_DEFAULT_CS;
 	unsigned int speed = CONFIG_SF_DEFAULT_SPEED;
 	unsigned int mode = CONFIG_SF_DEFAULT_MODE;
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 	unsigned long addr = 0x80000; /* XXX: parameterize this? */
 	loff_t offset = 0x007d0000;
 	loff_t len = 0x00010000;

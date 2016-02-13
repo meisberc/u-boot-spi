@@ -211,7 +211,7 @@ void check_enetaddr(void)
 
 static void erase_environment(void)
 {
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 
 	printf("Erasing environment..\n");
 	flash = spi_flash_probe(0, 0, 1000000, SPI_MODE_3);
