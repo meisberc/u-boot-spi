@@ -280,7 +280,7 @@ static int do_spi_flash_read_write(int argc, char * const argv[])
 
 	/* Consistency checking */
 	if (offset + len > flash->size) {
-		printf("ERROR: attempting %s past flash size (%#x)\n",
+		printf("ERROR: attempting %s past flash size (%#llx)\n",
 		       argv[0], flash->size);
 		return 1;
 	}
@@ -336,7 +336,7 @@ static int do_spi_flash_erase(int argc, char * const argv[])
 
 	/* Consistency checking */
 	if (offset + size > flash->size) {
-		printf("ERROR: attempting %s past flash size (%#x)\n",
+		printf("ERROR: attempting %s past flash size (%#llx)\n",
 		       argv[0], flash->size);
 		return 1;
 	}
