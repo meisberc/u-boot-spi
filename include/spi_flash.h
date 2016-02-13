@@ -70,7 +70,7 @@ struct spi_flash {
 	u8 shift;
 	u16 flags;
 
-	u32 size;
+	uint64_t size;
 	u32 page_size;
 	u32 sector_size;
 	u32 erasesize;
