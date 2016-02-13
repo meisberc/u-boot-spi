@@ -19,7 +19,7 @@
 #include <asm/io.h>
 #include <dm/device-internal.h>
 
-static struct spi_flash *flash;
+static spi_flash_t *flash;
 
 /*
  * This function computes the length argument for the erase command.
@@ -89,7 +89,7 @@ static int do_spi_flash_probe(int argc, char * const argv[])
 	struct udevice *new, *bus_dev;
 	int ret;
 #else
-	struct spi_flash *new;
+	spi_flash_t *new;
 #endif
 
 	if (argc >= 2) {
@@ -166,7 +166,7 @@ static int do_spi_flash_probe(int argc, char * const argv[])
  * @param skipped	Count of skipped data (incremented by this function)
  * @return NULL if OK, else a string containing the stage which failed
  */
-static const char *spi_flash_update_block(struct spi_flash *flash, u32 offset,
+static const char *spi_flash_update_block(spi_flash_t *flash, u32 offset,
 		size_t len, const char *buf, char *cmp_buf, size_t *skipped)
 {
 	char *ptr = (char *)buf;
@@ -208,7 +208,7 @@ static const char *spi_flash_update_block(struct spi_flash *flash, u32 offset,
  * @param buf		buffer to write from
  * @return 0 if ok, 1 on error
  */
-static int spi_flash_update(struct spi_flash *flash, u32 offset,
+static int spi_flash_update(spi_flash_t *flash, u32 offset,
 		size_t len, const char *buf)
 {
 	const char *err_oper = NULL;
@@ -436,7 +436,7 @@ static void spi_test_next_stage(struct test_info *test)
  * @param vbuf		Verification buffer
  * @return 0 if ok, -1 on error
  */
-static int spi_flash_test(struct spi_flash *flash, uint8_t *buf, ulong len,
+static int spi_flash_test(spi_flash_t *flash, uint8_t *buf, ulong len,
 			   ulong offset, uint8_t *vbuf)
 {
 	struct test_info test;
