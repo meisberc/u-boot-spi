@@ -20,7 +20,7 @@
 DECLARE_GLOBAL_DATA_PTR;
 
 #ifdef CONFIG_SPI_FLASH
-static struct spi_flash *sf;
+static spi_flash_t *sf;
 static int splash_sf_read_raw(u32 bmp_load_addr, int offset, size_t read_size)
 {
 	if (!sf) {

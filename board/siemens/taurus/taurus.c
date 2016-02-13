@@ -121,7 +121,7 @@ void spl_board_init(void)
 
 	/* check for recovery mode */
 	if (at91_is_recovery() == 1) {
-		struct spi_flash *flash;
+		spi_flash_t *flash;
 
 		puts("Recovery button pressed\n");
 		nand_init();

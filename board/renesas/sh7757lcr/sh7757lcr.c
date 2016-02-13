@@ -30,7 +30,7 @@ static void init_gctrl(void)
 
 static int init_pcie_bridge_from_spi(void *buf, size_t size)
 {
-	struct spi_flash *spi;
+	spi_flash_t *spi;
 	int ret;
 	unsigned long pcie_addr;
 
@@ -256,7 +256,7 @@ int board_mmc_init(bd_t *bis)
 
 static int get_sh_eth_mac_raw(unsigned char *buf, int size)
 {
-	struct spi_flash *spi;
+	spi_flash_t *spi;
 	int ret;
 
 	spi = spi_flash_probe(0, 0, 1000000, SPI_MODE_3);
@@ -381,7 +381,7 @@ int do_write_mac(cmd_tbl_t *cmdtp, int flag, int argc, char * const argv[])
 {
 	int i, ret;
 	char mac_string[256];
-	struct spi_flash *spi;
+	spi_flash_t *spi;
 	unsigned char *buf;
 
 	if (argc != 5) {

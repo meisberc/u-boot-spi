@@ -73,7 +73,7 @@ struct ram_internal_data {
 };
 
 struct sf_internal_data {
-	struct spi_flash *dev;
+	spi_flash_t *dev;
 
 	/* RAW programming */
 	u64 start;

@@ -49,7 +49,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #ifdef CONFIG_MAC_ADDR_IN_SPIFLASH
 static int get_mac_addr(u8 *addr)
 {
-	struct spi_flash *flash;
+	spi_flash_t *flash;
 	int ret;
 
 	flash = spi_flash_probe(CFG_MAC_ADDR_SPI_BUS, CFG_MAC_ADDR_SPI_CS,
