@@ -110,9 +110,15 @@ struct spi_flash {
 
 #if defined(CONFIG_MTD_SPI_NOR) && defined(CONFIG_DM_MTD_SPI_NOR)
 
+typedef struct mtd_info spi_flash_t;
+
 int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
 			   unsigned int max_hz, unsigned int spi_mode,
 			   struct udevice **devp);
+
+/* Compatibility function - this is the old U-Boot API */
+spi_flash_t *spi_flash_probe(unsigned int bus, unsigned int cs,
+			     unsigned int max_hz, unsigned int spi_mode);
 
 #endif
 
