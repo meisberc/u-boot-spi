@@ -234,7 +234,7 @@ const struct pinmux_resource pinmuxes[] = {
 	PINMUX_ITEM(emac_pins_mii),
 #endif
 #endif
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 	PINMUX_ITEM(spi1_pins_base),
 	PINMUX_ITEM(spi1_pins_scs0),
 #endif
