@@ -109,6 +109,7 @@ static struct mrc_data_container *find_next_mrc_cache(struct mrc_region *entry,
 int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 		    struct mrc_data_container *cur)
 {
+	spi_flash_t *flash = dev_get_uclass_priv(sf);
 	struct mrc_data_container *cache;
 	ulong offset;
 	ulong base_addr;
@@ -139,7 +140,7 @@ int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 		debug("Erasing the MRC cache region of %x bytes at %x\n",
 		      entry->length, entry->offset);
 
-		ret = spi_flash_erase_dm(sf, entry->offset, entry->length);
+		ret = spi_flash_erase(flash, entry->offset, entry->length);
 		if (ret) {
 			debug("Failed to erase flash region\n");
 			return ret;
@@ -150,8 +151,7 @@ int mrccache_update(struct udevice *sf, struct mrc_region *entry,
 	/* Write the data out */
 	offset = (ulong)cache - base_addr + entry->offset;
 	debug("Write MRC cache update to flash at %lx\n", offset);
-	ret = spi_flash_write_dm(sf, offset, cur->data_size + sizeof(*cur),
-				 cur);
+	ret = spi_flash_write(flash, offset, cur->data_size + sizeof(*cur), cur);
 	if (ret) {
 		debug("Failed to write to SPI flash\n");
 		return ret;
@@ -216,8 +216,7 @@ int mrccache_get_region(struct udevice **devp, struct mrc_region *entry)
 	entry->length = reg[1];
 
 	if (devp) {
-		ret = uclass_get_device_by_of_offset(UCLASS_SPI_FLASH, node,
-						     devp);
+		ret = uclass_get_device_by_of_offset(UCLASS_MTD, node, devp);
 		debug("ret = %d\n", ret);
 		if (ret)
 			return ret;
