@@ -53,7 +53,7 @@ u32 spl_boot_device(void)
 	}
 	debug("Found device %s\n", dev->name);
 	switch (device_get_uclass_id(dev)) {
-	case UCLASS_SPI_FLASH:
+	case UCLASS_MTD:
 		return BOOT_DEVICE_SPI;
 	case UCLASS_MMC:
 		return BOOT_DEVICE_MMC1;
