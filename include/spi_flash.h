@@ -12,6 +12,7 @@
 
 #include <dm.h>	/* Because we dereference struct udevice here */
 #include <linux/types.h>
+#include <linux/mtd/mtd.h>
 
 #ifndef CONFIG_SF_DEFAULT_SPEED
 # define CONFIG_SF_DEFAULT_SPEED	1000000
@@ -112,6 +113,39 @@ struct spi_flash {
 
 typedef struct mtd_info spi_flash_t;
 
+static inline int spi_flash_read(spi_flash_t *info, u32 offset,
+				 size_t len, void *buf)
+{
+	return mtd_read(info, offset, len, &len, (u_char *)buf);
+}
+
+static inline int spi_flash_write(spi_flash_t *info, u32 offset,
+				  size_t len, const void *buf)
+{
+	return mtd_write(info, offset, len, &len, (u_char *)buf);
+}
+
+static inline int spi_flash_erase(spi_flash_t *info, u32 offset, size_t len)
+{
+	struct erase_info instr;
+
+	instr.mtd = info;
+	instr.addr = offset;
+	instr.len = len;
+	instr.callback = 0;
+
+	return mtd_erase(info, &instr);
+}
+
+static inline int spi_flash_protect(spi_flash_t *info, u32 ofs,
+				    u32 len, bool prot)
+{
+	if (prot)
+		return mtd_lock(info, ofs, len);
+	else
+		return mtd_unlock(info, ofs, len);
+}
+
 #ifdef CONFIG_DM_MTD_SPI_NOR
 
 int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
@@ -136,6 +170,20 @@ spi_flash_t *spi_flash_probe_fdt(const void *blob, int slave_node,
 void spi_flash_free(spi_flash_t *flash);
 
 #endif /* CONFIG_DM_MTD_SPI_NOR */
+
+#else
+
+static inline int spi_flash_protect(struct spi_flash *flash, u32 ofs, u32 len,
+					bool prot)
+{
+	if (!flash->flash_lock || !flash->flash_unlock)
+		return -EOPNOTSUPP;
+
+	if (prot)
+		return flash->flash_lock(flash, ofs, len);
+	else
+		return flash->flash_unlock(flash, ofs, len);
+}
 
 #endif /* CONFIG_MTD_SPI_NOR */
 
@@ -265,18 +313,6 @@ static inline int spi_flash_erase(struct spi_flash *flash, u32 offset,
 	return flash->erase(flash, offset, len);
 }
 #endif
-
-static inline int spi_flash_protect(struct spi_flash *flash, u32 ofs, u32 len,
-					bool prot)
-{
-	if (!flash->flash_lock || !flash->flash_unlock)
-		return -EOPNOTSUPP;
-
-	if (prot)
-		return flash->flash_lock(flash, ofs, len);
-	else
-		return flash->flash_unlock(flash, ofs, len);
-}
 
 void spi_boot(void) __noreturn;
 void spi_spl_load_image(uint32_t offs, unsigned int size, void *vdst);
