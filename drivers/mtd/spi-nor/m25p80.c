@@ -20,6 +20,9 @@
 struct m25p {
 	struct spi_slave	*spi;
 	struct spi_nor		spi_nor;
+#ifndef CONFIG_DM_MTD_SPI_NOR
+	struct mtd_info		mtd;
+#endif
 };
 
 static int spi_read_then_write(struct spi_slave *spi, const u8 *cmd,
@@ -188,15 +191,12 @@ static int m25p80_write(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 	return ret;
 }
 
-static int m25p_probe(struct udevice *dev)
+static int m25p80_spi_nor(struct spi_nor *nor)
 {
-	struct spi_slave *spi = dev_get_parent_priv(dev);
-	struct mtd_info	*mtd = dev_get_uclass_priv(dev);
-	struct m25p *flash = dev_get_priv(dev);
-	struct spi_nor *nor;
+	struct mtd_info *mtd = nor->mtd;
+	struct m25p *flash = nor->priv;
+	struct spi_slave *spi = flash->spi;
 	int ret;
-
-	nor = &flash->spi_nor;
 
 	/* install hooks */
 	nor->read_mmap = m25p80_read_mmap;
@@ -204,10 +204,6 @@ static int m25p_probe(struct udevice *dev)
 	nor->write = m25p80_write;
 	nor->read_reg = m25p80_read_reg;
 	nor->write_reg = m25p80_write_reg;
-
-	nor->mtd = mtd;
-	nor->priv = flash;
-	flash->spi = spi;
 
 	/* claim spi bus */
 	ret = spi_claim_bus(spi);
@@ -260,8 +256,31 @@ err_scan:
 	spi_release_bus(spi);
 err_mtd:
 	spi_free_slave(spi);
-	device_remove(dev);
 	return ret;
+}
+
+#ifdef CONFIG_DM_MTD_SPI_NOR
+static int m25p_probe(struct udevice *dev)
+{
+	struct spi_slave *spi = dev_get_parent_priv(dev);
+	struct mtd_info	*mtd = dev_get_uclass_priv(dev);
+	struct m25p *flash = dev_get_priv(dev);
+	struct spi_nor *nor;
+	int ret;
+
+	nor = &flash->spi_nor;
+
+	nor->mtd = mtd;
+	nor->priv = flash;
+	flash->spi = spi;
+
+	ret = m25p80_spi_nor(nor);
+	if (ret) {
+		device_remove(dev);
+		return ret;
+	}
+
+	return 0;
 }
 
 static const struct udevice_id m25p_ids[] = {
@@ -280,3 +299,68 @@ U_BOOT_DRIVER(m25p80) = {
 	.probe		= m25p_probe,
 	.priv_auto_alloc_size = sizeof(struct m25p),
 };
+
+#else
+
+static struct mtd_info *m25p80_probe_tail(struct spi_slave *bus)
+{
+	struct m25p *flash;
+	struct spi_nor *nor;
+	int ret;
+
+	flash = calloc(1, sizeof(*flash));
+	if (!flash) {
+		debug("mp25p80: failed to allocate m25p\n");
+		return NULL;
+	}
+
+	nor = &flash->spi_nor;
+	nor->mtd = &flash->mtd;
+
+	nor->priv = flash;
+	flash->spi = bus;
+
+	ret = m25p80_spi_nor(nor);
+	if (ret) {
+		free(flash);
+		return NULL;
+	}
+
+	return nor->mtd;
+}
+
+struct mtd_info *spi_flash_probe(unsigned int busnum, unsigned int cs,
+				 unsigned int max_hz, unsigned int spi_mode)
+{
+	struct spi_slave *bus;
+
+	bus = spi_setup_slave(busnum, cs, max_hz, spi_mode);
+	if (!bus)
+		return NULL;
+	return m25p80_probe_tail(bus);
+}
+
+#ifdef CONFIG_OF_SPI_FLASH
+struct mtd_info *spi_flash_probe_fdt(const void *blob, int slave_node,
+				     int spi_node)
+{
+	struct spi_slave *bus;
+
+	bus = spi_setup_slave_fdt(blob, slave_node, spi_node);
+	if (!bus)
+		return NULL;
+	return m25p80_probe_tail(bus);
+}
+#endif
+
+void spi_flash_free(struct mtd_info *info)
+{
+	struct spi_nor *nor = info->priv;
+	struct m25p *flash = nor->priv;
+
+	del_mtd_device(info);
+	spi_free_slave(flash->spi);
+	free(flash);
+}
+
+#endif /* CONFIG_DM_MTD_SPI_NOR */
