@@ -535,7 +535,7 @@ erase_err:
 	return ret;
 }
 
-static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
+static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 			 size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd->priv;
@@ -544,9 +544,9 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 	int ret = -1;
 
 	if (mtd->_is_locked) {
-		if (mtd->_is_locked(mtd, offset, len) > 0) {
+		if (mtd->_is_locked(mtd, to, len) > 0) {
 			printf("offset 0x%llx is protected and cannot be written\n",
-			       offset);
+			       to);
 			return -EINVAL;
 		}
 	}
@@ -554,7 +554,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 	page_size = nor->page_size;
 
 	for (actual = 0; actual < len; actual += chunk_len) {
-		write_addr = offset;
+		write_addr = to;
 
 #ifdef CONFIG_SF_DUAL_FLASH
 		if (nor->dual > SNOR_DUAL_SINGLE)
@@ -565,7 +565,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 		if (ret < 0)
 			return ret;
 #endif
-		byte_addr = offset % page_size;
+		byte_addr = to % page_size;
 		chunk_len = min(len - actual, (size_t)(page_size - byte_addr));
 
 		if (nor->max_write_size)
@@ -582,7 +582,7 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 		if (ret < 0)
 			return ret;
 
-		offset += chunk_len;
+		to += chunk_len;
 		*retlen += chunk_len;
 	}
 
@@ -662,7 +662,7 @@ static int sst_byte_write(struct spi_nor *nor, u32 offset,
 	return spi_nor_wait_till_ready(nor, SNOR_READY_WAIT_PROG);
 }
 
-static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
+static int sst_write_wp(struct mtd_info *mtd, loff_t to, size_t len,
 			size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd->priv;
@@ -670,13 +670,13 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 	int ret;
 
 	/* If the data is not word aligned, write out leading single byte */
-	actual = offset % 2;
+	actual = to % 2;
 	if (actual) {
-		ret = sst_byte_write(nor, offset, buf, retlen);
+		ret = sst_byte_write(nor, to, buf, retlen);
 		if (ret)
 			goto done;
 	}
-	offset += actual;
+	to += actual;
 
 	ret = write_enable(nor);
 	if (ret)
@@ -685,7 +685,7 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 	for (; actual < len - 1; actual += 2) {
 		nor->program_opcode = SNOR_OP_AAI_WP;
 
-		ret = nor->write(nor, offset, 2, buf + actual);
+		ret = nor->write(nor, to, 2, buf + actual);
 		if (ret) {
 			debug("spi-nor: sst word program failed\n");
 			break;
@@ -695,7 +695,7 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 		if (ret)
 			break;
 
-		offset += 2;
+		to += 2;
 		*retlen += 2;
 	}
 
@@ -704,13 +704,13 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 
 	/* If there is a single trailing byte, write it out */
 	if (!ret && actual != len)
-		ret = sst_byte_write(nor, offset, buf + actual, retlen);
+		ret = sst_byte_write(nor, to, buf + actual, retlen);
 
  done:
 	return ret;
 }
 
-static int sst_write_bp(struct mtd_info *mtd, loff_t offset, size_t len,
+static int sst_write_bp(struct mtd_info *mtd, loff_t to, size_t len,
 			size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd->priv;
@@ -718,12 +718,12 @@ static int sst_write_bp(struct mtd_info *mtd, loff_t offset, size_t len,
 	int ret;
 
 	for (actual = 0; actual < len; actual++) {
-		ret = sst_byte_write(nor, offset, buf + actual, retlen);
+		ret = sst_byte_write(nor, to, buf + actual, retlen);
 		if (ret) {
 			debug("spi-nor: sst byte program failed\n");
 			break;
 		}
-		offset++;
+		to++;
 	}
 
 	if (!ret)
