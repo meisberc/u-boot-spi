@@ -617,7 +617,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	struct spi_nor *nor = mtd->priv;
 	u32 remain_len, read_len, read_addr;
-	u8 *cmd, cmdsz;
+	u8 cmd[SNOR_MAX_CMD_SIZE], cmdsz;
 	int bank_sel = 0;
 	int ret = -1;
 
@@ -633,12 +633,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	}
 
 	cmdsz = SNOR_MAX_CMD_SIZE + nor->read_dummy;
-	cmd = calloc(1, cmdsz);
-	if (!cmd) {
-		debug("spi-nor: Failed to allocate cmd\n");
-		return -ENOMEM;
-	}
-
 	cmd[0] = nor->read_opcode;
 	while (len) {
 		read_addr = from;
@@ -672,7 +666,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		*retlen += read_len;
 	}
 
-	free(cmd);
 	return ret;
 }
 
