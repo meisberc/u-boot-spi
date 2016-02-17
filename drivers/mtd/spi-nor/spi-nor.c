@@ -642,8 +642,8 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 }
 
 #ifdef CONFIG_SPI_NOR_SST
-static int sst_byte_write(struct spi_nor *nor, u32 offset,
-			  const void *buf, size_t *retlen)
+static int sst_byte_write(struct spi_nor *nor, u32 addr, const void *buf,
+			  size_t *retlen)
 {
 	int ret;
 
@@ -653,7 +653,7 @@ static int sst_byte_write(struct spi_nor *nor, u32 offset,
 
 	nor->program_opcode = SNOR_OP_BP;
 
-	ret = nor->write(nor, offset, 1, buf);
+	ret = nor->write(nor, addr, 1, buf);
 	if (ret)
 		return ret;
 
