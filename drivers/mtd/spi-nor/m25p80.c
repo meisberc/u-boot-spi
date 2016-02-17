@@ -17,13 +17,23 @@
 #include <linux/mtd/mtd.h>
 #include <linux/mtd/spi-nor.h>
 
+#define MAX_CMD_SIZE		6
 struct m25p {
 	struct spi_slave	*spi;
 	struct spi_nor		spi_nor;
 #ifndef CONFIG_DM_MTD_SPI_NOR
 	struct mtd_info		mtd;
 #endif
+	u8			command[MAX_CMD_SIZE];
 };
+
+static void spi_nor_addr(u32 addr, u8 *cmd)
+{
+	/* cmd[0] is actual command */
+	cmd[1] = addr >> 16;
+	cmd[2] = addr >> 8;
+	cmd[3] = addr >> 0;
+}
 
 static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
 {
@@ -112,8 +122,8 @@ static int m25p80_read_mmap(struct spi_nor *nor, void *data,
 	return ret;
 }
 
-static int m25p80_read(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
-				void *data, size_t data_len)
+static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
+		       u_char *buf)
 {
 	struct m25p *flash = nor->priv;
 	struct spi_slave *spi = flash->spi;
@@ -125,12 +135,16 @@ static int m25p80_read(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 		return ret;
 	}
 
+	flash->command[0] = nor->read_opcode;
+	spi_nor_addr(from, flash->command);
+
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
-	ret = spi_write_then_read(spi, cmd, cmd_len, NULL, data, data_len);
+	ret = spi_write_then_read(spi, flash->command, 4 + nor->read_dummy,
+				  NULL, buf, len);
 	if (ret < 0) {
-		debug("m25p80: error %d reading %x\n", ret, *cmd);
+		debug("m25p80: error %d reading %x\n", ret, flash->command[0]);
 		return ret;
 	}
 
@@ -139,11 +153,12 @@ static int m25p80_read(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 	return ret;
 }
 
-static int m25p80_write(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
-				const void *data, size_t data_len)
+static int m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
+			const u_char *buf)
 {
 	struct m25p *flash = nor->priv;
 	struct spi_slave *spi = flash->spi;
+	int cmd_sz = 4;
 	int ret;
 
 	ret = spi_claim_bus(spi);
@@ -152,12 +167,22 @@ static int m25p80_write(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 		return ret;
 	}
 
+	if (nor->program_opcode == SNOR_OP_AAI_WP)
+		cmd_sz = 1;
+
+	flash->command[0] = nor->program_opcode;
+	spi_nor_addr(to, flash->command);
+
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
-	ret = spi_write_then_read(spi, cmd, cmd_len, data, NULL, data_len);
+	debug("m25p80: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
+	       buf, flash->command[0], flash->command[1], flash->command[2],
+	       flash->command[3], len);
+
+	ret = spi_write_then_read(spi, flash->command, cmd_sz, buf, NULL, len);
 	if (ret < 0) {
-		debug("m25p80: error %d writing %x\n", ret, *cmd);
+		debug("m25p80: error %d writing %x\n", ret, flash->command[0]);
 		return ret;
 	}
 
@@ -166,7 +191,7 @@ static int m25p80_write(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 	return ret;
 }
 
-static int m25p80_erase(struct spi_nor *nor, const u8 *cmd, size_t cmd_len)
+static int m25p80_erase(struct spi_nor *nor, loff_t offset)
 {
 	struct m25p *flash = nor->priv;
 	struct spi_slave *spi = flash->spi;
@@ -178,12 +203,18 @@ static int m25p80_erase(struct spi_nor *nor, const u8 *cmd, size_t cmd_len)
 		return ret;
 	}
 
+	flash->command[0] = nor->erase_opcode;
+	spi_nor_addr(offset, flash->command);
+
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
-	ret = spi_write_then_read(spi, cmd, cmd_len, NULL, NULL, 0);
+	debug("m25p80: erase %2x %2x %2x %2x (%llx)\n", flash->command[0],
+	       flash->command[1], flash->command[2], flash->command[3], offset);
+
+	ret = spi_write_then_read(spi, flash->command, 4, NULL, NULL, 0);
 	if (ret < 0) {
-		debug("m25p80: error %d writing %x\n", ret, *cmd);
+		debug("m25p80: error %d writing %x\n", ret, flash->command[0]);
 		return ret;
 	}
 
