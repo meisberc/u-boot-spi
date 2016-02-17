@@ -224,11 +224,11 @@ struct spi_nor {
 
 	int (*read_mmap)(struct spi_nor *nor, void *data, void *offset,
 			size_t len);
-	int (*read)(struct spi_nor *nor, const u8 *opcode, size_t cmd_len,
-			void *data, size_t data_len);
-	int (*write)(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
-			const void *data, size_t data_len);
-	int (*erase)(struct spi_nor *nor, const u8 *cmd, size_t cmd_len);
+	int (*read)(struct spi_nor *nor, loff_t from, size_t len,
+		    u_char *read_buf);
+	int (*write)(struct spi_nor *nor, loff_t to, size_t len,
+		     const u_char *write_buf);
+	int (*erase)(struct spi_nor *nor, loff_t offs);
 
 	int (*flash_lock)(struct spi_nor *nor, loff_t ofs, uint64_t len);
 	int (*flash_unlock)(struct spi_nor *nor, loff_t ofs, uint64_t len);

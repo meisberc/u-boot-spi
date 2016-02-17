@@ -32,14 +32,6 @@ static inline int write_disable(struct spi_nor *nor)
 	return nor->write_reg(nor, SNOR_OP_WRDI, NULL, 0);
 }
 
-static void spi_nor_addr(u32 addr, u8 *cmd)
-{
-	/* cmd[0] is actual command */
-	cmd[1] = addr >> 16;
-	cmd[2] = addr >> 8;
-	cmd[3] = addr >> 0;
-}
-
 static int read_sr(struct spi_nor *nor)
 {
 	u8 sr;
@@ -487,7 +479,6 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 {
 	struct spi_nor *nor = mtd->priv;
 	u32 addr, len, erase_addr;
-	u8 cmd[SNOR_MAX_CMD_SIZE];
 	uint32_t rem;
 	int ret = -1;
 
@@ -506,7 +497,6 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 		}
 	}
 
-	cmd[0] = nor->erase_opcode;
 	while (len) {
 		erase_addr = addr;
 
@@ -519,14 +509,9 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 		if (ret < 0)
 			return ret;
 #endif
-		spi_nor_addr(erase_addr, cmd);
-
-		debug("spi-nor: erase %2x %2x %2x %2x (%x)\n", cmd[0], cmd[1],
-		      cmd[2], cmd[3], erase_addr);
-
 		write_enable(nor);
 
-		ret = nor->erase(nor, cmd, sizeof(cmd));
+		ret = nor->erase(nor, erase_addr);
 		if (ret < 0)
 			goto erase_err;
 
@@ -556,7 +541,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 	struct spi_nor *nor = mtd->priv;
 	u32 byte_addr, page_size, write_addr;
 	size_t chunk_len, actual;
-	u8 cmd[SNOR_MAX_CMD_SIZE];
 	int ret = -1;
 
 	if (mtd->_is_locked) {
@@ -569,7 +553,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 
 	page_size = nor->page_size;
 
-	cmd[0] = nor->program_opcode;
 	for (actual = 0; actual < len; actual += chunk_len) {
 		write_addr = offset;
 
@@ -589,15 +572,9 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t offset, size_t len,
 			chunk_len = min(chunk_len,
 					(size_t)nor->max_write_size);
 
-		spi_nor_addr(write_addr, cmd);
-
-		debug("spi-nor: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
-		      buf + actual, cmd[0], cmd[1], cmd[2], cmd[3], chunk_len);
-
 		write_enable(nor);
 
-		ret = nor->write(nor, cmd, sizeof(cmd),
-				 buf + actual, chunk_len);
+		ret = nor->write(nor, write_addr, chunk_len, buf + actual);
 		if (ret < 0)
 			break;
 
@@ -617,7 +594,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	struct spi_nor *nor = mtd->priv;
 	u32 remain_len, read_len, read_addr;
-	u8 cmd[SNOR_MAX_CMD_SIZE], cmdsz;
 	int bank_sel = 0;
 	int ret = -1;
 
@@ -632,8 +608,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		return ret;
 	}
 
-	cmdsz = SNOR_MAX_CMD_SIZE + nor->read_dummy;
-	cmd[0] = nor->read_opcode;
 	while (len) {
 		read_addr = from;
 
@@ -654,9 +628,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		else
 			read_len = remain_len;
 
-		spi_nor_addr(read_addr, cmd);
-
-		ret = nor->read(nor, cmd, cmdsz, buf, read_len);
+		ret = nor->read(nor, read_addr, read_len, buf);
 		if (ret < 0)
 			break;
 
@@ -674,21 +646,14 @@ static int sst_byte_write(struct spi_nor *nor, u32 offset,
 			  const void *buf, size_t *retlen)
 {
 	int ret;
-	u8 cmd[4] = {
-		SNOR_OP_BP,
-		offset >> 16,
-		offset >> 8,
-		offset,
-	};
-
-	debug("spi-nor: 0x%p => cmd = { 0x%02x 0x%06x }\n",
-	      buf, cmd[0], offset);
 
 	ret = write_enable(nor);
 	if (ret)
 		return ret;
 
-	ret = nor->write(nor, cmd, sizeof(cmd), buf, 1);
+	nor->program_opcode = SNOR_OP_BP;
+
+	ret = nor->write(nor, offset, 1, buf);
 	if (ret)
 		return ret;
 
@@ -701,9 +666,8 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 			size_t *retlen, const u_char *buf)
 {
 	struct spi_nor *nor = mtd->priv;
-	size_t actual, cmd_len;
+	size_t actual;
 	int ret;
-	u8 cmd[4];
 
 	/* If the data is not word aligned, write out leading single byte */
 	actual = offset % 2;
@@ -718,17 +682,10 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 	if (ret)
 		goto done;
 
-	cmd_len = 4;
-	cmd[0] = SNOR_OP_AAI_WP;
-	cmd[1] = offset >> 16;
-	cmd[2] = offset >> 8;
-	cmd[3] = offset;
-
 	for (; actual < len - 1; actual += 2) {
-		debug("spi-nor: 0x%p => cmd = { 0x%02x 0x%06llx }\n",
-		      buf + actual, cmd[0], offset);
+		nor->program_opcode = SNOR_OP_AAI_WP;
 
-		ret = nor->write(nor, cmd, cmd_len, buf + actual, 2);
+		ret = nor->write(nor, offset, 2, buf + actual);
 		if (ret) {
 			debug("spi-nor: sst word program failed\n");
 			break;
@@ -738,7 +695,6 @@ static int sst_write_wp(struct mtd_info *mtd, loff_t offset, size_t len,
 		if (ret)
 			break;
 
-		cmd_len = 1;
 		offset += 2;
 		*retlen += 2;
 	}
