@@ -171,6 +171,7 @@ extern const struct spi_nor_info spi_nor_ids[];
  * @mtd:		point to a mtd_info structure
  * @name:		name of the SPI NOR device
  * @page_size:		the page size of the SPI NOR
+ * @addr_width: 	number of address bytes
  * @erase_opcode:	the opcode for erasing a sector
  * @read_opcode:	the read opcode
  * @read_dummy: 	the dummy bytes needed by the read operation
@@ -202,6 +203,7 @@ struct spi_nor {
 	struct mtd_info		*mtd;
 	const char		*name;
 	u32			page_size;
+	u8			addr_width;
 	u8			erase_opcode;
 	u8			read_opcode;
 	u8			read_dummy;
