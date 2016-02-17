@@ -1032,6 +1032,11 @@ int spi_nor_scan(struct spi_nor *nor)
 		}
 	}
 
+	if (info->addr_width)
+		nor->addr_width = info->addr_width;
+	else
+		nor->addr_width = 3;
+
 	/* read_dummy: dummy byte is determined based on the
 	 * dummy cycles of a particular command.
 	 * Fast commands - read_dummy = dummy_cycles/8

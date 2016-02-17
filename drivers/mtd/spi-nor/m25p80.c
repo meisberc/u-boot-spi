@@ -27,12 +27,13 @@ struct m25p {
 	u8			command[MAX_CMD_SIZE];
 };
 
-static void m25p_addr2cmd(u32 addr, u8 *cmd)
+static void m25p_addr2cmd(struct spi_nor *nor, unsigned int addr, u8 *cmd)
 {
-	/* cmd[0] is actual command */
-	cmd[1] = addr >> 16;
-	cmd[2] = addr >> 8;
-	cmd[3] = addr >> 0;
+	/* opcode is in cmd[0] */
+	cmd[1] = addr >> (nor->addr_width * 8 -  8);
+	cmd[2] = addr >> (nor->addr_width * 8 - 16);
+	cmd[3] = addr >> (nor->addr_width * 8 - 24);
+	cmd[4] = addr >> (nor->addr_width * 8 - 32);
 }
 
 static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
@@ -136,7 +137,7 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 	}
 
 	flash->command[0] = nor->read_opcode;
-	m25p_addr2cmd(from, flash->command);
+	m25p_addr2cmd(nor, from, flash->command);
 
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
@@ -171,7 +172,7 @@ static int m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
 		cmd_sz = 1;
 
 	flash->command[0] = nor->program_opcode;
-	m25p_addr2cmd(to, flash->command);
+	m25p_addr2cmd(nor, to, flash->command);
 
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
@@ -204,7 +205,7 @@ static int m25p80_erase(struct spi_nor *nor, loff_t offset)
 	}
 
 	flash->command[0] = nor->erase_opcode;
-	m25p_addr2cmd(offset, flash->command);
+	m25p_addr2cmd(nor, offset, flash->command);
 
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
