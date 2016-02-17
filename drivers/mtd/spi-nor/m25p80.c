@@ -41,7 +41,7 @@ static int m25p_cmdsz(struct spi_nor *nor)
 	return 1 + nor->addr_width;
 }
 
-static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
+static int m25p80_read_reg(struct spi_nor *nor, u8 opcode, u8 *val, int len)
 {
 	struct m25p *flash = nor->priv;
 	struct spi_slave *spi = flash->spi;
@@ -56,9 +56,9 @@ static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
-	ret = spi_write_then_read(spi, &cmd, 1, NULL, val, len);
+	ret = spi_write_then_read(spi, &opcode, 1, NULL, val, len);
 	if (ret < 0) {
-		debug("m25p80: error %d reading register %x\n", ret, cmd);
+		debug("m25p80: error %d reading register %x\n", ret, opcode);
 		return ret;
 	}
 
@@ -67,7 +67,7 @@ static int m25p80_read_reg(struct spi_nor *nor, u8 cmd, u8 *val, int len)
 	return ret;
 }
 
-static int m25p80_write_reg(struct spi_nor *nor, u8 cmd, u8 *buf, int len)
+static int m25p80_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 {
 	struct m25p *flash = nor->priv;
 	struct spi_slave *spi = flash->spi;
@@ -82,9 +82,9 @@ static int m25p80_write_reg(struct spi_nor *nor, u8 cmd, u8 *buf, int len)
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
-	ret = spi_write_then_read(spi, &cmd, 1, buf, NULL, len);
+	ret = spi_write_then_read(spi, &opcode, 1, buf, NULL, len);
 	if (ret < 0) {
-		debug("m25p80: error %d writing register %x\n", ret, cmd);
+		debug("m25p80: error %d writing register %x\n", ret, opcode);
 		return ret;
 	}
 
