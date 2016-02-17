@@ -1047,13 +1047,13 @@ int spi_nor_scan(struct spi_nor *nor)
 	 */
 	switch (nor->read_opcode) {
 	case SNOR_OP_READ_1_1_4_IO:
-		nor->read_dummy = 2;
+		nor->read_dummy = 16;
 		break;
 	case SNOR_OP_READ:
 		nor->read_dummy = 0;
 		break;
 	default:
-		nor->read_dummy = 1;
+		nor->read_dummy = 8;
 	}
 
 	/* Configure the BAR - discover bank cmds and read current bank */
