@@ -191,6 +191,7 @@ extern const struct spi_nor_info spi_nor_ids[];
  * @read_mmap:		[DRIVER-SPECIFIC] read data from the mmapped SPI NOR
  * @read:		[DRIVER-SPECIFIC] read data from the SPI NOR
  * @write:		[DRIVER-SPECIFIC] write data to the SPI NOR
+ * @erase:		[DRIVER-SPECIFIC] erase a sector of the SPI NOR
  * @flash_lock: 	[FLASH-SPECIFIC] lock a region of the SPI NOR
  * @flash_unlock:	[FLASH-SPECIFIC] unlock a region of the SPI NOR
  * @flash_is_locked:	[FLASH-SPECIFIC] check if a region of the SPI NOR is
@@ -227,6 +228,7 @@ struct spi_nor {
 			void *data, size_t data_len);
 	int (*write)(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 			const void *data, size_t data_len);
+	int (*erase)(struct spi_nor *nor, const u8 *cmd, size_t cmd_len);
 
 	int (*flash_lock)(struct spi_nor *nor, loff_t ofs, uint64_t len);
 	int (*flash_unlock)(struct spi_nor *nor, loff_t ofs, uint64_t len);

@@ -526,7 +526,7 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 
 		write_enable(nor);
 
-		ret = nor->write(nor, cmd, sizeof(cmd), NULL, 0);
+		ret = nor->erase(nor, cmd, sizeof(cmd));
 		if (ret < 0)
 			goto erase_err;
 

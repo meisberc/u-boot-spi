@@ -166,6 +166,32 @@ static int m25p80_write(struct spi_nor *nor, const u8 *cmd, size_t cmd_len,
 	return ret;
 }
 
+static int m25p80_erase(struct spi_nor *nor, const u8 *cmd, size_t cmd_len)
+{
+	struct m25p *flash = nor->priv;
+	struct spi_slave *spi = flash->spi;
+	int ret;
+
+	ret = spi_claim_bus(spi);
+	if (ret < 0) {
+		debug("m25p80: unable to claim SPI bus\n");
+		return ret;
+	}
+
+	if (nor->flags & SNOR_F_U_PAGE)
+		spi->flags |= SPI_XFER_U_PAGE;
+
+	ret = spi_write_then_read(spi, cmd, cmd_len, NULL, NULL, 0);
+	if (ret < 0) {
+		debug("m25p80: error %d writing %x\n", ret, *cmd);
+		return ret;
+	}
+
+	spi_release_bus(spi);
+
+	return ret;
+}
+
 static int m25p80_spi_nor(struct spi_nor *nor)
 {
 	struct mtd_info *mtd = nor->mtd;
@@ -176,6 +202,7 @@ static int m25p80_spi_nor(struct spi_nor *nor)
 	/* install hooks */
 	nor->read_mmap = m25p80_read_mmap;
 	nor->read = m25p80_read;
+	nor->erase = m25p80_erase;
 	nor->write = m25p80_write;
 	nor->read_reg = m25p80_read_reg;
 	nor->write_reg = m25p80_write_reg;
