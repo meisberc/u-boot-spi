@@ -62,6 +62,10 @@
 #define SNOR_OP_BP		0x02	/* Byte program */
 #define SNOR_OP_AAI_WP		0xad	/* Auto addr increment word program */
 
+/* Used for Macronix and Winbond flashes. */
+#define SPINOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
+#define SPINOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
+
 /* Used for Micron flashes only. */
 #define SPINOR_OP_RD_EVCR      0x65    /* Read EVCR register */
 #define SPINOR_OP_WD_EVCR      0x61    /* Write EVCR register */
