@@ -849,10 +849,8 @@ int spi_nor_scan(struct spi_nor *nor)
 	nor->page_size <<= nor->shift;
 	mtd->writebufsize = nor->page_size;
 	mtd->size = (info->sector_size * info->n_sectors) << nor->shift;
-#ifdef CONFIG_SF_DUAL_FLASH
 	if (nor->dual & SNOR_DUAL_STACKED)
 		mtd->size <<= 1;
-#endif
 
 #ifdef CONFIG_MTD_SPI_NOR_USE_4K_SECTORS
 	/* prefer "small sector" erase if possible */
