@@ -99,6 +99,14 @@ config SPI_NOR_SANDBOX
 	  device. Typically the contents of the emulated SPI flash device is
 	  stored in a file on the host filesystem.
 
+config SPI_ZYNQ_QSPI
+	bool "Zynq QSPI controller"
+	help
+	  Enable the Zynq Quad-SPI (QSPI) driver. This driver can be
+	  used to access the SPI NOR flash on platforms embedding this
+	  Zynq QSPI IP core. This IP is used to connect the flash in
+	  4-bit qspi, 8-bit dual stacked and shared 4-bit dual parallel.
+
 endif # MTD_SPI_NOR
 
 config MTD_DATAFLASH
