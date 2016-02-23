@@ -148,7 +148,7 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				compatible = "intel,ich9-spi";
-				spi-flash@0 {
+				spi-nor@0 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					reg = <0>;

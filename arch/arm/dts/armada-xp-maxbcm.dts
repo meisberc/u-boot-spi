@@ -228,7 +228,7 @@
 			spi0: spi@10600 {
 				status = "okay";
 
-				spi-flash@0 {
+				spi-nor@0 {
 					#address-cells = <1>;
 					#size-cells = <1>;
 					compatible = "n25q128a13", "jedec,spi-nor";
