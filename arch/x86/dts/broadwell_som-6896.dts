@@ -40,7 +40,7 @@
 				compatible = "intel,ich9-spi";
 				spi-flash@0 {
 					reg = <0>;
-					compatible = "winbond,w25q128", "spi-flash";
+					compatible = "winbond,w25q128", "jedec,spi-nor";
 					memory-map = <0xff000000 0x01000000>;
 				};
 			};

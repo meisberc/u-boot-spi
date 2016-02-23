@@ -47,7 +47,7 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		partition@test {
-			label = "spi-flash";
+			label = "jedec,spi-nor";
 			reg = <0x0 0x100000>;
 		};
 	};
