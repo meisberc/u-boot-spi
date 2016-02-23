@@ -187,26 +187,17 @@ static int m25p80_spi_nor(struct spi_nor *nor)
 		return ret;
 	}
 
-	switch (spi->mode_rx) {
-	case SPI_RX_SLOW:
+	if (spi->mode & SPI_RX_SLOW)
 		nor->read_mode = SNOR_READ;
-		break;
-	case SPI_RX_DUAL:
+	else if (spi->mode & SPI_RX_DUAL)
 		nor->read_mode = SNOR_READ_1_1_2;
-		break;
-	case SPI_RX_QUAD:
+	else if (spi->mode & SPI_RX_QUAD)
 		nor->read_mode = SNOR_READ_1_1_4;
-		break;
-	}
 
-	switch (spi->mode) {
-	case SPI_TX_BYTE:
+	if (spi->mode & SPI_TX_BYTE)
 		nor->mode = SNOR_WRITE_1_1_BYTE;
-		break;
-	case SPI_TX_QUAD:
+	else if (spi->mode & SPI_TX_QUAD)
 		nor->mode = SNOR_WRITE_1_1_4;
-		break;
-	}
 
 	nor->memory_map = spi->memory_map;
 	nor->max_write_size = spi->max_write_size;
