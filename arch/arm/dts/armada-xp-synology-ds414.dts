@@ -84,7 +84,7 @@
 				status = "okay";
 				u-boot,dm-pre-reloc;
 
-				spi-flash@0 {
+				spi-nor@0 {
 					u-boot,dm-pre-reloc;
 					#address-cells = <1>;
 					#size-cells = <1>;
