@@ -60,7 +60,7 @@
 #endif
 
 /* QSPI */
-#ifdef CONFIG_ZYNQ_QSPI
+#ifdef CONFIG_SPI_ZYNQ_QSPI
 # define CONFIG_SF_DEFAULT_SPEED	30000000
 # define CONFIG_SPI_NOR_MISC
 # define CONFIG_CMD_SF
@@ -195,7 +195,7 @@
 # ifndef CONFIG_SYS_NO_FLASH
 /* Environment in NOR flash */
 #  define CONFIG_ENV_IS_IN_FLASH
-# elif defined(CONFIG_ZYNQ_QSPI)
+# elif defined(CONFIG_SPI_ZYNQ_QSPI)
 /* Environment in Serial Flash */
 #  define CONFIG_ENV_IS_IN_SPI_FLASH
 # elif defined(CONFIG_SYS_NO_FLASH)
@@ -338,7 +338,7 @@
 #define CONFIG_SYS_MMCSD_RAW_MODE_KERNEL_SECTOR	0
 
 /* qspi mode is working fine */
-#ifdef CONFIG_ZYNQ_QSPI
+#ifdef CONFIG_SPI_ZYNQ_QSPI
 #define CONFIG_SPL_SPI_SUPPORT
 #define CONFIG_SPL_SPI_LOAD
 #define CONFIG_SPL_SPI_NOR_SUPPORT
