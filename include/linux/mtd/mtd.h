@@ -278,6 +278,11 @@ struct mtd_info {
 	int usecount;
 };
 
+struct dm_mtd_ops {
+       int (*probe_bus)(struct udevice *bus);
+};
+#define mtd_get_ops(bus)	((struct dm_mtd_ops *)(bus)->driver->ops)
+
 int mtd_erase(struct mtd_info *mtd, struct erase_info *instr);
 #ifndef __UBOOT__
 int mtd_point(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
