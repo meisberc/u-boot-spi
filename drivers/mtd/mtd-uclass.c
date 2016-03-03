@@ -8,6 +8,15 @@
 #include <dm.h>
 #include <errno.h>
 #include <mtd.h>
+#include <dm/root.h>
+
+DECLARE_GLOBAL_DATA_PTR;
+
+static int mtd_post_bind(struct udevice *dev)
+{
+	/* Scan the bus for devices */
+	return dm_scan_fdt_node(dev, gd->fdt_blob, dev->of_offset, false);
+}
 
 /*
  * Implement a MTD uclass which should include most flash drivers.
@@ -17,5 +26,6 @@
 UCLASS_DRIVER(mtd) = {
 	.id		= UCLASS_MTD,
 	.name		= "mtd",
+	.post_bind	= mtd_post_bind,
 	.per_device_auto_alloc_size = sizeof(struct mtd_info),
 };
