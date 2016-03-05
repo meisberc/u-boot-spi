@@ -58,20 +58,11 @@ config SPI_NOR_BAR
 	  Bank/Extended address registers are used to access the flash
 	  which has size > 16MiB in 3-byte addressing.
 
-config SPI_FLASH_ATMEL
-	bool "Atmel SPI flash support"
+config SPI_NOR_MISC
+	bool "Miscellaneous SPI NOR flash's support"
 	help
-	  Add support for various Atmel SPI flash chips (AT45xxx and AT25xxx)
-
-config SPI_FLASH_EON
-	bool "EON SPI flash support"
-	help
-	  Add support for various EON SPI flash chips (EN25xxx)
-
-config SPI_FLASH_GIGADEVICE
-	bool "GigaDevice SPI flash support"
-	help
-	  Add support for various GigaDevice SPI flash chips (GD25xxx)
+	  Add support for various Atmel, EON, ESMT, Everspin, Fujitsu,
+	  GigaDevice, Intel, ISSI, PMC and non-JEDEC SPI NOR flash chips.
 
 config SPI_NOR_MACRONIX
 	bool "Macronix SPI flash support"

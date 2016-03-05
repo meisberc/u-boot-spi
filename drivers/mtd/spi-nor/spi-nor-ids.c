@@ -41,6 +41,7 @@
 		.flash_read = _flash_read,					\
 		.flags = (_flags),
 
+#ifdef CONFIG_SPI_NOR_MISC
 #define CAT25_INFO(_sector_size, _n_sectors, _page_size, _addr_width, _flash_read, _flags)	\
 		.sector_size = (_sector_size),				\
 		.n_sectors = (_n_sectors),				\
@@ -48,6 +49,7 @@
 		.addr_width = (_addr_width),				\
 		.flash_read = _flash_read,					\
 		.flags = (_flags),
+#endif
 
 /* NOTE: double check command sets and memory organization when you add
  * more nor chips.  This current list focusses on newer chips, which
@@ -61,7 +63,7 @@
  * old entries may be missing 4K flag.
  */
 const struct spi_nor_info spi_nor_ids[] = {
-#ifdef CONFIG_SPI_FLASH_ATMEL		/* ATMEL */
+#ifdef CONFIG_SPI_NOR_MISC
 	/* Atmel -- some are (confusingly) marketed as "DataFlash" */
 	{ "at25fs010",  INFO(0x1f6601, 0, 32 * 1024,   4, SNOR_READ_BASE, SECT_4K) },
 	{ "at25fs040",  INFO(0x1f6604, 0, 64 * 1024,   8, SNOR_READ_BASE, SECT_4K) },
@@ -83,7 +85,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "at45db321d",	INFO(0x1f2700, 0, 64 * 1024,  64, SNOR_READ_BASE, SECT_4K) },
 	{ "at45db641d",	INFO(0x1f2800, 0, 64 * 1024, 128, SNOR_READ_BASE, SECT_4K) },
 #endif
-#ifdef CONFIG_SPI_FLASH_EON		/* EON */
+#ifdef CONFIG_SPI_NOR_MISC
 	/* EON -- en25xxx */
 	{ "en25f32",    INFO(0x1c3116, 0, 64 * 1024,   64, SNOR_READ_BASE, SECT_4K) },
 	{ "en25p32",    INFO(0x1c2016, 0, 64 * 1024,   64, SNOR_READ_BASE, 0) },
@@ -95,6 +97,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "en25qh256",  INFO(0x1c7019, 0, 64 * 1024,  512, SNOR_READ_BASE, 0) },
 	{ "en25s64",	INFO(0x1c3817, 0, 64 * 1024,  128, SNOR_READ_BASE, SECT_4K) },
 #endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* ESMT */
 	{ "f25l32pa", INFO(0x8c2016, 0, 64 * 1024, 64, SNOR_READ_BASE, SECT_4K) },
 
@@ -104,20 +107,21 @@ const struct spi_nor_info spi_nor_ids[] = {
 
 	/* Fujitsu */
 	{ "mb85rs1mt", INFO(0x047f27, 0, 128 * 1024, 1, SNOR_READ_BASE, SPI_NOR_NO_ERASE) },
-
-#ifdef CONFIG_SPI_FLASH_GIGADEVICE	/* GIGADEVICE */
+#endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* GigaDevice */
 	{ "gd25q32", INFO(0xc84016, 0, 64 * 1024,  64, SNOR_READ_BASE, SECT_4K) },
 	{ "gd25q64", INFO(0xc84017, 0, 64 * 1024, 128, SNOR_READ_BASE, SECT_4K) },
 	{ "gd25q128", INFO(0xc84018, 0, 64 * 1024, 256, SNOR_READ_BASE, SECT_4K) },
 	{ "gd25lq32", INFO(0xc86016, 0,	64 * 1024,  64, SNOR_READ_BASE, SECT_4K) },
 #endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* Intel/Numonyx -- xxxs33b */
 	{ "160s33b",  INFO(0x898911, 0, 64 * 1024,  32, SNOR_READ_BASE, 0) },
 	{ "320s33b",  INFO(0x898912, 0, 64 * 1024,  64, SNOR_READ_BASE, 0) },
 	{ "640s33b",  INFO(0x898913, 0, 64 * 1024, 128, SNOR_READ_BASE, 0) },
-
-#ifdef CONFIG_SPI_FLASH_ISSI		/* ISSI */
+#endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* ISSI */
 	{ "is25cd512", INFO(0x7f9d20, 0, 32 * 1024,   2, SNOR_READ_BASE, SECT_4K) },
 	{ "is25lp032", INFO(0x9d6016, 0, 64 * 1024,  64, SNOR_READ_BASE, 0) },
@@ -154,11 +158,12 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "n25q512ax3",  INFO(0x20ba20, 0, 64 * 1024, 1024, SNOR_READ_FULL, SNOR_WRITE_QUAD | SECT_4K | USE_FSR) },
 	{ "n25q00",      INFO(0x20ba21, 0, 64 * 1024, 2048, SNOR_READ_FULL, SNOR_WRITE_QUAD | SECT_4K | USE_FSR) },
 #endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* PMC */
 	{ "pm25lv512",   INFO(0,        0, 32 * 1024,    2, SNOR_READ_BASE, SECT_4K_PMC) },
 	{ "pm25lv010",   INFO(0,        0, 32 * 1024,    4, SNOR_READ_BASE, SECT_4K_PMC) },
 	{ "pm25lq032",   INFO(0x7f9d46, 0, 64 * 1024,   64, SNOR_READ_BASE, SECT_4K) },
-
+#endif
 #ifdef CONFIG_SPI_NOR_SPANSION	/* SPANSION */
 	/* Spansion -- single (large) sector size only, at least
 	 * for the chips listed here (without boot sectors).
@@ -266,11 +271,13 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "w25q64dw", INFO(0xef6017, 0, 64 * 1024, 128, SNOR_READ_FULL, SNOR_WRITE_QUAD | SECT_4K) },
 	{ "w25q128fw", INFO(0xef6018, 0, 64 * 1024, 256, SNOR_READ_FULL, SNOR_WRITE_QUAD | SECT_4K) },
 #endif
+#ifdef CONFIG_SPI_NOR_MISC
 	/* Catalyst / On Semiconductor -- non-JEDEC */
 	{ "cat25c11", CAT25_INFO(  16, 8, 16, 1, SNOR_READ_BASE, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25c03", CAT25_INFO(  32, 8, 16, 2, SNOR_READ_BASE, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25c09", CAT25_INFO( 128, 8, 32, 2, SNOR_READ_BASE, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25c17", CAT25_INFO( 256, 8, 32, 2, SNOR_READ_BASE, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
 	{ "cat25128", CAT25_INFO(2048, 8, 64, 2, SNOR_READ_BASE, SPI_NOR_NO_ERASE | SPI_NOR_NO_FR) },
+#endif
 	{ },
 };
