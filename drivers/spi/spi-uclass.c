@@ -95,26 +95,25 @@ int spi_xfer(struct spi_slave *slave, unsigned int bitlen,
 	return spi_get_ops(bus)->xfer(dev, bitlen, dout, din, flags);
 }
 
-int spi_read_then_write(struct spi_slave *spi, const u8 *cmd,
-			size_t cmd_len, const u8 *data_out,
-			u8 *data_in, size_t data_len)
+int spi_write_then_read(struct spi_slave *slave, const u8 *opcode,
+			size_t n_opcode, const u8 *txbuf, u8 *rxbuf,
+			size_t n_buf)
 {
 	unsigned long flags = SPI_XFER_BEGIN;
 	int ret;
 
-	if (data_len == 0)
+	if (n_buf == 0)
 		flags |= SPI_XFER_END;
 
-	ret = spi_xfer(spi, cmd_len * 8, cmd, NULL, flags);
+	ret = spi_xfer(slave, n_opcode * 8, opcode, NULL, flags);
 	if (ret) {
 		debug("spi: failed to send command (%zu bytes): %d\n",
-		      cmd_len, ret);
-	} else if (data_len != 0) {
-		ret = spi_xfer(spi, data_len * 8, data_out, data_in,
-			       SPI_XFER_END);
+		      n_opcode, ret);
+	} else if (n_buf != 0) {
+		ret = spi_xfer(slave, n_buf * 8, txbuf, rxbuf, SPI_XFER_END);
 		if (ret)
 			debug("spi: failed to transfer %zu bytes of data: %d\n",
-			      data_len, ret);
+			      n_buf, ret);
 	}
 
 	return ret;
