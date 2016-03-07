@@ -54,15 +54,15 @@ void spi_boot(void)
 	/*
 	* Load U-Boot image from SPI flash into RAM
 	*/
-	buf = malloc(flash->page_size);
+	buf = malloc(flash->writebufsize);
 	if (buf == NULL) {
 		puts("\nmalloc failed");
 		hang();
 	}
-	memset(buf, 0, flash->page_size);
+	memset(buf, 0, flash->writebufsize);
 
 	spi_flash_read(flash, CONFIG_CFG_DATA_SECTOR,
-		       flash->page_size, (void *)buf);
+		       flash->writebufsize, (void *)buf);
 	offset = *(u32 *)(buf + ESPI_BOOT_IMAGE_ADDR);
 	/* Skip spl code */
 	offset += CONFIG_SYS_SPI_FLASH_U_BOOT_OFFS;
