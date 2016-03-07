@@ -22,7 +22,7 @@
 #include <ioports.h>
 #include <netdev.h>
 #include <micrel.h>
-#include <spi_flash.h>
+#include <spi.h>
 #include <mmc.h>
 #include <linux/ctype.h>
 #include <asm/fsl_serdes.h>
