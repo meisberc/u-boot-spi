@@ -206,7 +206,6 @@ unsigned int cm_get_l4_sp_clk_hz(void);
  */
 /* Enable multiple SPI NOR flash manufacturers */
 #ifndef CONFIG_SPL_BUILD
-#define CONFIG_SPI_FLASH_MTD
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
