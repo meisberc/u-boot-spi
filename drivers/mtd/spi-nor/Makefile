@@ -17,3 +17,4 @@ endif
 
 obj-$(CONFIG_MTD_M25P80)	+= m25p80.o
 obj-$(CONFIG_MTD_DATAFLASH)	+= mtd_dataflash.o
+obj-$(CONFIG_SPI_NOR_SANDBOX)	+= sandbox.o

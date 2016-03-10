@@ -98,6 +98,16 @@ config SPI_FLASH_WINBOND
 	help
 	  Add support for various Winbond SPI flash chips (W25xxx)
 
+config SPI_NOR_SANDBOX
+	bool "Support sandbox SPI flash device"
+	depends on SANDBOX
+	help
+	  Since sandbox cannot access real devices, an emulation mechanism is
+	  provided instead. Drivers can be connected up to the sandbox SPI
+	  bus (see CONFIG_SANDBOX_SPI) and SPI traffic will be routed to this
+	  device. Typically the contents of the emulated SPI flash device is
+	  stored in a file on the host filesystem.
+
 endif # MTD_SPI_NOR
 
 config MTD_DATAFLASH
