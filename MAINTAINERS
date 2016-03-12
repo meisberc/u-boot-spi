@@ -385,7 +385,6 @@ SPI
 M:	Jagan Teki <jteki@openedev.com>
 S:	Maintained
 T:	git git://git.denx.de/u-boot-spi.git
-F:	drivers/mtd/spi/
 F:	drivers/spi/
 F:	include/spi*
 
