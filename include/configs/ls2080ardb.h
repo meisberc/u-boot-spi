@@ -259,7 +259,7 @@ unsigned long get_board_sys_clk(void);
 #define CONFIG_CMD_SF
 #define CONFIG_MTD_SPI_NOR
 #define CONFIG_MTD_M25P80
-#define CONFIG_SPI_FLASH_BAR
+#define CONFIG_SPI_NOR_BAR
 #endif
 
 /*
