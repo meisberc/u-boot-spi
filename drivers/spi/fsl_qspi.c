@@ -38,7 +38,7 @@ DECLARE_GLOBAL_DATA_PTR;
 #define SEQID_PP		6
 #define SEQID_RDID		7
 #define SEQID_BE_4K		8
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 #define SEQID_BRRD		9
 #define SEQID_BRWR		10
 #define SEQID_RDEAR		11
@@ -178,7 +178,7 @@ static void qspi_set_lut(struct fsl_qspi_priv *priv)
 
 	/* Fast Read */
 	lut_base = SEQID_FAST_READ * 4;
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	qspi_write32(priv->flags, &regs->lut[lut_base],
 		     OPRND0(QSPI_CMD_FAST_READ) | PAD0(LUT_PAD1) |
 		     INSTR0(LUT_CMD) | OPRND1(ADDR24BIT) |
@@ -214,7 +214,7 @@ static void qspi_set_lut(struct fsl_qspi_priv *priv)
 
 	/* Erase a sector */
 	lut_base = SEQID_SE * 4;
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	qspi_write32(priv->flags, &regs->lut[lut_base], OPRND0(QSPI_CMD_SE) |
 		     PAD0(LUT_PAD1) | INSTR0(LUT_CMD) | OPRND1(ADDR24BIT) |
 		     PAD1(LUT_PAD1) | INSTR1(LUT_ADDR));
@@ -245,7 +245,7 @@ static void qspi_set_lut(struct fsl_qspi_priv *priv)
 
 	/* Page Program */
 	lut_base = SEQID_PP * 4;
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	qspi_write32(priv->flags, &regs->lut[lut_base], OPRND0(QSPI_CMD_PP) |
 		     PAD0(LUT_PAD1) | INSTR0(LUT_CMD) | OPRND1(ADDR24BIT) |
 		     PAD1(LUT_PAD1) | INSTR1(LUT_ADDR));
@@ -291,7 +291,7 @@ static void qspi_set_lut(struct fsl_qspi_priv *priv)
 		     PAD0(LUT_PAD1) | INSTR0(LUT_CMD) | OPRND1(ADDR24BIT) |
 		     PAD1(LUT_PAD1) | INSTR1(LUT_ADDR));
 
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	/*
 	 * BRRD BRWR RDEAR WREAR are all supported, because it is hard to
 	 * dynamically check whether to set BRRD BRWR or RDEAR WREAR during
@@ -430,7 +430,7 @@ static void qspi_init_ahb_read(struct fsl_qspi_priv *priv)
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 /* Bank register read/write, EAR register read/write */
 static void qspi_op_rdbank(struct fsl_qspi_priv *priv, u8 *rxbuf, u32 len)
 {
@@ -601,7 +601,7 @@ static void qspi_op_write(struct fsl_qspi_priv *priv, u8 *txbuf, u32 len)
 
 	/* Default is page programming */
 	seqid = SEQID_PP;
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	if (priv->cur_seqid == QSPI_CMD_BRWR)
 		seqid = SEQID_BRWR;
 	else if (priv->cur_seqid == QSPI_CMD_WREAR)
@@ -735,7 +735,7 @@ int qspi_xfer(struct fsl_qspi_priv *priv, unsigned int bitlen,
 			wr_sfaddr = swab32(txbuf) & OFFSET_BITS_MASK;
 		} else if ((priv->cur_seqid == QSPI_CMD_BRWR) ||
 			 (priv->cur_seqid == QSPI_CMD_WREAR)) {
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 			wr_sfaddr = 0;
 #endif
 		}
@@ -752,7 +752,7 @@ int qspi_xfer(struct fsl_qspi_priv *priv, unsigned int bitlen,
 			qspi_op_rdid(priv, din, bytes);
 		else if (priv->cur_seqid == QSPI_CMD_RDSR)
 			qspi_op_rdsr(priv, din, bytes);
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 		else if ((priv->cur_seqid == QSPI_CMD_BRRD) ||
 			 (priv->cur_seqid == QSPI_CMD_RDEAR)) {
 			priv->sf_addr = 0;
