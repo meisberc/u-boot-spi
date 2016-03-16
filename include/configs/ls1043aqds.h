@@ -373,7 +373,7 @@ unsigned long get_board_ddr_clk(void);
 #if defined(CONFIG_QSPI_BOOT) || defined(CONFIG_SD_BOOT_QSPI)
 #define CONFIG_FSL_QSPI
 #ifdef CONFIG_FSL_QSPI
-#define CONFIG_SPI_FLASH_SPANSION
+#define CONFIG_SPI_NOR_SPANSION
 #define FSL_QSPI_FLASH_SIZE		(1 << 24)
 #define FSL_QSPI_FLASH_NUM		2
 #endif

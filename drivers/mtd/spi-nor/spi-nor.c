@@ -74,7 +74,7 @@ static int write_sr(struct spi_nor *nor, u8 ws)
 	return nor->write_reg(nor, SNOR_OP_WRSR, nor->cmd_buf, 1);
 }
 
-#if defined(CONFIG_SPI_FLASH_SPANSION) || defined(CONFIG_SPI_FLASH_WINBOND)
+#if defined(CONFIG_SPI_NOR_SPANSION) || defined(CONFIG_SPI_NOR_WINBOND)
 static int read_cr(struct spi_nor *nor)
 {
 	u8 cr;
@@ -104,7 +104,7 @@ static int write_sr_cr(struct spi_nor *nor, u16 val)
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_STMICRO
+#ifdef CONFIG_SPI_NOR_STMICRO
 static int read_evcr(struct spi_nor *nor)
 {
 	u8 evcr;
@@ -264,7 +264,7 @@ static void spi_nor_dual(struct spi_nor *nor, u32 *addr)
 }
 #endif
 
-#if defined(CONFIG_SPI_FLASH_STMICRO) || defined(CONFIG_SPI_FLASH_SST)
+#if defined(CONFIG_SPI_NOR_STMICRO) || defined(CONFIG_SPI_NOR_SST)
 static void stm_get_locked_range(struct spi_nor *nor, u8 sr, loff_t *ofs,
 				 uint64_t *len)
 {
@@ -676,7 +676,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	return ret;
 }
 
-#ifdef CONFIG_SPI_FLASH_SST
+#ifdef CONFIG_SPI_NOR_SST
 static int sst_byte_write(struct spi_nor *nor, u32 offset,
 			  const void *buf, size_t *retlen)
 {
@@ -784,7 +784,7 @@ static int sst_write_bp(struct mtd_info *mtd, loff_t offset, size_t len,
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_MACRONIX
+#ifdef CONFIG_SPI_NOR_MACRONIX
 static int macronix_quad_enable(struct spi_nor *nor)
 {
 	int ret, val;
@@ -815,7 +815,7 @@ static int macronix_quad_enable(struct spi_nor *nor)
 }
 #endif
 
-#if defined(CONFIG_SPI_FLASH_SPANSION) || defined(CONFIG_SPI_FLASH_WINBOND)
+#if defined(CONFIG_SPI_NOR_SPANSION) || defined(CONFIG_SPI_NOR_WINBOND)
 static int spansion_quad_enable(struct spi_nor *nor)
 {
 	int ret, val;
@@ -847,7 +847,7 @@ static int spansion_quad_enable(struct spi_nor *nor)
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_STMICRO
+#ifdef CONFIG_SPI_NOR_STMICRO
 static int micron_quad_enable(struct spi_nor *nor)
 {
 	int ret, val;
@@ -877,16 +877,16 @@ static int micron_quad_enable(struct spi_nor *nor)
 static int set_quad_mode(struct spi_nor *nor, const struct spi_nor_info *info)
 {
 	switch (JEDEC_MFR(info)) {
-#ifdef CONFIG_SPI_FLASH_MACRONIX
+#ifdef CONFIG_SPI_NOR_MACRONIX
 	case SNOR_MFR_MACRONIX:
 		return macronix_quad_enable(nor);
 #endif
-#if defined(CONFIG_SPI_FLASH_SPANSION) || defined(CONFIG_SPI_FLASH_WINBOND)
+#if defined(CONFIG_SPI_NOR_SPANSION) || defined(CONFIG_SPI_NOR_WINBOND)
 	case SNOR_MFR_SPANSION:
 	case SNOR_MFR_WINBOND:
 		return spansion_quad_enable(nor);
 #endif
-#ifdef CONFIG_SPI_FLASH_STMICRO
+#ifdef CONFIG_SPI_NOR_STMICRO
 	case SNOR_MFR_MICRON:
 		return micron_quad_enable(nor);
 #endif
@@ -985,7 +985,7 @@ int spi_nor_scan(struct spi_nor *nor)
 		nor->flags |= SNOR_F_SST_WRITE;
 
 	mtd->_write = spi_nor_write;
-#if defined(CONFIG_SPI_FLASH_SST)
+#if defined(CONFIG_SPI_NOR_SST)
 	if (nor->flags & SNOR_F_SST_WRITE) {
 		if (nor->mode & SNOR_WRITE_1_1_BYTE)
 			mtd->_write = sst_write_bp;
@@ -994,7 +994,7 @@ int spi_nor_scan(struct spi_nor *nor)
 	}
 #endif
 
-#if defined(CONFIG_SPI_FLASH_STMICRO) || defined(CONFIG_SPI_FLASH_SST)
+#if defined(CONFIG_SPI_NOR_STMICRO) || defined(CONFIG_SPI_NOR_SST)
 	/* NOR protection support for STmicro/Micron chips and similar */
 	if (JEDEC_MFR(info) == SNOR_MFR_MICRON ||
 	    JEDEC_MFR(info) == SNOR_MFR_SST) {
