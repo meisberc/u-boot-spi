@@ -124,7 +124,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "is25lp064", INFO(0x9d6017, 0, 64 * 1024, 128, SNOR_READ_BASE, 0) },
 	{ "is25lp128", INFO(0x9d6018, 0, 64 * 1024, 256, SNOR_READ_BASE, 0) },
 #endif
-#ifdef CONFIG_SPI_FLASH_MACRONIX	/* MACRONIX */
+#ifdef CONFIG_SPI_NOR_MACRONIX	/* MACRONIX */
 	/* Macronix */
 	{ "mx25l512e",   INFO(0xc22010, 0, 64 * 1024,   1, SNOR_READ_BASE, SECT_4K) },
 	{ "mx25l2005a",  INFO(0xc22012, 0, 64 * 1024,   4, SNOR_READ_BASE, SECT_4K) },
@@ -142,7 +142,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "mx66l51235l", INFO(0xc2201a, 0, 64 * 1024, 1024, SNOR_READ_FULL, SNOR_WRITE_QUAD) },
 	{ "mx66l1g55g",  INFO(0xc2261b, 0, 64 * 1024, 2048, SNOR_READ_FULL, SNOR_WRITE_QUAD) },
 #endif
-#ifdef CONFIG_SPI_FLASH_STMICRO		/* STMICRO */
+#ifdef CONFIG_SPI_NOR_STMICRO		/* STMICRO */
 	/* Micron */
 	{ "n25q032",	 INFO(0x20ba16, 0, 64 * 1024,   64, SNOR_READ_FULL, SNOR_WRITE_QUAD) },
 	{ "n25q064",     INFO(0x20ba17, 0, 64 * 1024,  128, SNOR_READ_FULL, SNOR_WRITE_QUAD | SECT_4K) },
@@ -159,7 +159,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "pm25lv010",   INFO(0,        0, 32 * 1024,    4, SNOR_READ_BASE, SECT_4K_PMC) },
 	{ "pm25lq032",   INFO(0x7f9d46, 0, 64 * 1024,   64, SNOR_READ_BASE, SECT_4K) },
 
-#ifdef CONFIG_SPI_FLASH_SPANSION	/* SPANSION */
+#ifdef CONFIG_SPI_NOR_SPANSION	/* SPANSION */
 	/* Spansion -- single (large) sector size only, at least
 	 * for the chips listed here (without boot sectors).
 	 */
@@ -188,7 +188,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "s25fl164k",  INFO(0x014017,      0,  64 * 1024, 128, SNOR_READ_BASE, SECT_4K) },
 	{ "s25fl204k",  INFO(0x014013,      0,  64 * 1024,   8, SNOR_READ_BASE, SECT_4K) },
 #endif
-#ifdef CONFIG_SPI_FLASH_SST		/* SST */
+#ifdef CONFIG_SPI_NOR_SST		/* SST */
 	/* SST -- large erase sizes are "overlays", "sectors" are 4K */
 	{ "sst25vf040b", INFO(0xbf258d, 0, 64 * 1024,  8, SNOR_READ_BASE, SECT_4K | SST_WRITE) },
 	{ "sst25vf080b", INFO(0xbf258e, 0, 64 * 1024, 16, SNOR_READ_BASE, SECT_4K | SST_WRITE) },
@@ -204,7 +204,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "sst25wf040",  INFO(0xbf2504, 0, 64 * 1024,  8, SNOR_READ_BASE, SECT_4K | SST_WRITE) },
 	{ "sst25wf080",  INFO(0xbf2505, 0, 64 * 1024, 16, SNOR_READ_BASE, SECT_4K | SST_WRITE) },
 #endif
-#ifdef CONFIG_SPI_FLASH_STMICRO		/* STMICRO */
+#ifdef CONFIG_SPI_NOR_STMICRO		/* STMICRO */
 	/* ST Microelectronics -- newer production may have feature updates */
 	{ "m25p05",  INFO(0x202010,  0,  32 * 1024,   2, SNOR_READ_BASE, 0) },
 	{ "m25p10",  INFO(0x202011,  0,  32 * 1024,   4, SNOR_READ_BASE, 0) },
@@ -241,7 +241,7 @@ const struct spi_nor_info spi_nor_ids[] = {
 	{ "m25px64",    INFO(0x207117,  0, 64 * 1024, 128, SNOR_READ_BASE, 0) },
 	{ "m25px80",    INFO(0x207114,  0, 64 * 1024, 16, SNOR_READ_BASE, 0) },
 #endif
-#ifdef CONFIG_SPI_FLASH_WINBOND		/* WINBOND */
+#ifdef CONFIG_SPI_NOR_WINBOND		/* WINBOND */
 	/* Winbond -- w25x "blocks" are 64K, "sectors" are 4KiB */
 	{ "W25P80", INFO(0xef2014, 0, 64 * 1024, 16, SNOR_READ_BASE, 0) },
 	{ "W25P16", INFO(0xef2015, 0, 64 * 1024, 32, SNOR_READ_BASE, 0) },
