@@ -12,7 +12,7 @@ config TEGRA_COMMON
 	select DM_PWM
 	select DM_SERIAL
 	select DM_SPI
-	select DM_SPI_FLASH
+	select MTD
 	select OF_CONTROL
 	select VIDCONSOLE_AS_LCD if DM_VIDEO
 

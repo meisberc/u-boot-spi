@@ -120,7 +120,7 @@ config ARCH_MVEBU
 	select DM_ETH
 	select DM_SERIAL
 	select DM_SPI
-	select DM_SPI_FLASH
+	select MTD
 	select SPL_DM
 	select SPL_DM_SEQ_ALIAS
 	select SPL_OF_CONTROL
@@ -220,7 +220,7 @@ config TARGET_STV0991
 	select DM
 	select DM_SERIAL
 	select DM_SPI
-	select DM_SPI_FLASH
+	select MTD
 	select SPI_FLASH
 
 config TARGET_X600
@@ -424,7 +424,7 @@ config ARCH_EXYNOS
 	bool "Samsung EXYNOS"
 	select CPU_V7
 	select DM
-	select DM_SPI_FLASH
+	select MTD
 	select DM_SERIAL
 	select DM_SPI
 	select DM_GPIO
@@ -513,7 +513,7 @@ config ARCH_SOCFPGA
 	select OF_CONTROL
 	select SPL_OF_CONTROL
 	select DM
-	select DM_SPI_FLASH
+	select MTD
 	select DM_SPI
 
 config TARGET_CM_T43
