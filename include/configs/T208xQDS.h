@@ -546,7 +546,7 @@ unsigned long get_board_ddr_clk(void);
 #endif
 
 #define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH_BAR
+#define CONFIG_SPI_NOR_BAR
 #define CONFIG_SF_DEFAULT_SPEED	 10000000
 #define CONFIG_SF_DEFAULT_MODE	  0
 #endif

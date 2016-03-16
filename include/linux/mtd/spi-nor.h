@@ -205,7 +205,7 @@ struct spi_nor {
 	u8			read_opcode;
 	u8			read_dummy;
 	u8			program_opcode;
-#ifdef CONFIG_SPI_FLASH_BAR
+#ifdef CONFIG_SPI_NOR_BAR
 	u8			bar_read_opcode;
 	u8			bar_program_opcode;
 	u8			bank_curr;
