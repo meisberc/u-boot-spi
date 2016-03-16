@@ -62,7 +62,7 @@
 /* QSPI */
 #ifdef CONFIG_ZYNQ_QSPI
 # define CONFIG_SF_DEFAULT_SPEED	30000000
-# define CONFIG_SPI_FLASH_ISSI
+# define CONFIG_SPI_NOR_MISC
 # define CONFIG_CMD_SF
 #endif
 
