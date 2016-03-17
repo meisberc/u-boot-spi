@@ -83,9 +83,7 @@ struct zynq_qspi_platdata {
 	struct zynq_qspi_regs *regs;
 	u32 frequency;          /* input frequency */
 	u32 speed_hz;
-#ifdef CONFIG_SF_DUAL_FLASH
 	u8 dual;
-#endif
 };
 
 /* zynq qspi priv */
@@ -511,7 +509,6 @@ static int zynq_qspi_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 	return zynq_qspi_tx_then_rx(nor, &opcode, 1, buf, NULL, len);
 }
 
-#ifdef CONFIG_SF_DUAL_FLASH
 static void zynq_qspi_dual(struct spi_nor *nor, u32 *addr)
 {
 	struct mtd_info *mtd = nor->mtd;
@@ -533,7 +530,6 @@ static void zynq_qspi_dual(struct spi_nor *nor, u32 *addr)
 		break;
 	}
 }
-#endif
 
 #ifdef CONFIG_SPI_NOR_BAR
 static int zynq_qspi_write_bar(struct spi_nor *nor, u32 offset)
@@ -610,10 +606,8 @@ static int zynq_qspi_read(struct spi_nor *nor, loff_t from, size_t len,
 	while (len) {
 		addr = from;
 
-#ifdef CONFIG_SF_DUAL_FLASH
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			zynq_qspi_dual(nor, &from);
-#endif
 
 #ifdef CONFIG_SPI_NOR_BAR
 		ret = zynq_qspi_write_bar(nor, from);
@@ -648,10 +642,8 @@ static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
 {
 	struct zynq_qspi_priv *priv = nor->priv;
 
-#ifdef CONFIG_SF_DUAL_FLASH
 	if (nor->dual > SNOR_DUAL_SINGLE)
 		zynq_qspi_dual(nor, &to);
-#endif
 
 #ifdef CONFIG_SPI_NOR_BAR
 	int ret;
@@ -671,10 +663,8 @@ static int zynq_qspi_erase(struct spi_nor *nor, loff_t offset)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
 
-#ifdef CONFIG_SF_DUAL_FLASH
 	if (nor->dual > SNOR_DUAL_SINGLE)
 		zynq_qspi_dual(nor, &offset);
-#endif
 
 #ifdef CONFIG_SPI_NOR_BAR
 	int ret;
@@ -737,9 +727,8 @@ static int zynq_qspi_ofdata_to_platdata(struct udevice *bus)
 	plat->frequency = fdtdec_get_int(blob, node, "spi-max-frequency",
 					166666666);
 	plat->speed_hz = plat->frequency / 2;
-#ifdef CONFIG_SF_DUAL_FLASH
 	plat->dual = fdtdec_get_uint(blob, node, "is-dual", SNOR_DUAL_SINGLE);
-#endif
+
 	debug("%s: regs=%p max-frequency=%d\n", __func__,
 	      plat->regs, plat->frequency);
 
@@ -759,10 +748,8 @@ static int zynq_qspi_probe_bus(struct udevice *bus)
 	nor->read_reg = zynq_qspi_read_reg;
 	nor->write_reg = zynq_qspi_write_reg;
 
-#ifdef CONFIG_SF_DUAL_FLASH
 	nor->dual = plat->dual;
 	nor->shift = (nor->dual & SNOR_DUAL_PARALLEL) ? 1 : 0;
-#endif
 
 	ret = spi_nor_scan(nor);
 	if (ret)
