@@ -592,22 +592,11 @@ static int zynq_qspi_ofdata_to_platdata(struct udevice *bus)
 	return 0;
 }
 
-static int zynq_qspi_probe(struct udevice *dev)
+static int zynq_qspi_probe_bus(struct udevice *bus)
 {
-	struct zynq_qspi_platdata *plat = dev_get_platdata(dev);
-	struct mtd_info *mtd = dev_get_uclass_priv(dev);
-	struct zynq_qspi_priv *priv = dev_get_priv(dev);
-	struct spi_nor *nor;
+	struct mtd_info *mtd = dev_get_uclass_priv(bus);
+	struct spi_nor *nor = mtd->priv;
 	int ret;
-
-	nor = &priv->spi_nor;
-
-	mtd->dev = dev;
-	nor->mtd = mtd;
-	nor->priv = priv;
-
-	priv->regs = plat->regs;
-	priv->fifo_depth = ZYNQ_QSPI_FIFO_DEPTH;
 
 	/* install the hooks */
 	nor->read = zynq_qspi_read;
@@ -615,9 +604,6 @@ static int zynq_qspi_probe(struct udevice *dev)
 	nor->erase = zynq_qspi_erase;
 	nor->read_reg = zynq_qspi_read_reg;
 	nor->write_reg = zynq_qspi_write_reg;
-
-	/* init the zynq spi hw */
-	zynq_qspi_init_hw(priv);
 
 	ret = spi_nor_scan(nor);
 	if (ret)
@@ -629,6 +615,33 @@ static int zynq_qspi_probe(struct udevice *dev)
 
 	return ret;
 }
+
+static int zynq_qspi_probe(struct udevice *dev)
+{
+	struct zynq_qspi_platdata *plat = dev_get_platdata(dev);
+	struct mtd_info *mtd = dev_get_uclass_priv(dev);
+	struct zynq_qspi_priv *priv = dev_get_priv(dev);
+	struct spi_nor *nor;
+
+	nor = &priv->spi_nor;
+
+	mtd->dev = dev;
+	nor->mtd = mtd;
+	nor->priv = priv;
+	mtd->priv = nor;
+
+	priv->regs = plat->regs;
+	priv->fifo_depth = ZYNQ_QSPI_FIFO_DEPTH;
+
+	/* init the zynq spi hw */
+	zynq_qspi_init_hw(priv);
+
+	return 0;
+}
+
+static const struct dm_mtd_ops zynq_qspi_ops = {
+	.probe_bus	= zynq_qspi_probe_bus,
+};
 
 static const struct udevice_id zynq_qspi_ids[] = {
 	{ .compatible = "xlnx,zynq-qspi-1.0" },
@@ -643,4 +656,5 @@ U_BOOT_DRIVER(zynq_qspi) = {
 	.platdata_auto_alloc_size = sizeof(struct zynq_qspi_platdata),
 	.priv_auto_alloc_size = sizeof(struct zynq_qspi_priv),
 	.probe  = zynq_qspi_probe,
+	.ops	= &zynq_qspi_ops,
 };
