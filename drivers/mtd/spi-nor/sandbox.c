@@ -362,7 +362,8 @@ static int sandbox_sf_xfer(struct udevice *dev, unsigned int bitlen,
 			debug(" id: off:%u tx:", sbsf->off);
 			if (sbsf->off < IDCODE_LEN) {
 				/* Extract correct byte from ID 0x00aabbcc */
-				id = sbsf->data->jedec >>
+				id = ((JEDEC_MFR(sbsf->data) << 16) |
+					JEDEC_ID(sbsf->data)) >>
 					(8 * (IDCODE_LEN - 1 - sbsf->off));
 			} else {
 				id = 0;
