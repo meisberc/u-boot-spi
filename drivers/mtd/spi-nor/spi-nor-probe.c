@@ -8,6 +8,7 @@
 #include <dm.h>
 #include <spi.h>
 #include <spi_flash.h>
+#include <linux/mtd/mtd.h>
 
 #include <dm/device-internal.h>
 
@@ -35,11 +36,27 @@ int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
 			   unsigned int max_hz, unsigned int spi_mode,
 			   struct udevice **devp)
 {
+	struct dm_mtd_ops *ops;
 	struct spi_slave *slave;
 	struct udevice *bus;
 	char name[30], *str;
 	int ret;
 
+	ret = uclass_get_device_by_seq(UCLASS_MTD, busnum, &bus);
+	if (ret) {
+		debug("Invalid bus %d (err=%d)\n", busnum, ret);
+		goto uclass_spi;
+	}
+
+	ops = mtd_get_ops(bus);
+	ret = ops->probe_bus(bus);
+	if (ret)
+		return ret;
+
+	*devp = bus;
+	return 0;
+
+uclass_spi:
 	snprintf(name, sizeof(name), "spi-nor@%d:%d", busnum, cs);
 	str = strdup(name);
 	ret = spi_get_bus_and_cs(busnum, cs, max_hz, spi_mode,
