@@ -26,6 +26,7 @@ static int mtd_post_bind(struct udevice *dev)
 UCLASS_DRIVER(mtd) = {
 	.id		= UCLASS_MTD,
 	.name		= "mtd",
+	.flags		= DM_UC_FLAG_SEQ_ALIAS,
 	.post_bind	= mtd_post_bind,
 	.per_device_auto_alloc_size = sizeof(struct mtd_info),
 };
