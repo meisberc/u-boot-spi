@@ -76,24 +76,16 @@ int spi_flash_probe_bus_cs(unsigned int busnum, unsigned int cs,
 			   unsigned int max_hz, unsigned int spi_mode,
 			   struct udevice **devp);
 
-/* Compatibility function - this is the old U-Boot API */
-spi_flash_t *spi_flash_probe(unsigned int bus, unsigned int cs,
-			     unsigned int max_hz, unsigned int spi_mode);
-
-/* Compatibility function - this is the old U-Boot API */
-void spi_flash_free(spi_flash_t *flash);
-
 #else
-
-spi_flash_t *spi_flash_probe(unsigned int bus, unsigned int cs,
-			     unsigned int max_hz, unsigned int spi_mode);
 
 spi_flash_t *spi_flash_probe_fdt(const void *blob, int slave_node,
 				 int spi_node);
 
-void spi_flash_free(spi_flash_t *flash);
-
 #endif /* CONFIG_DM_MTD_SPI_NOR */
+
+void spi_flash_free(spi_flash_t *flash);
+spi_flash_t *spi_flash_probe(unsigned int bus, unsigned int cs,
+			     unsigned int max_hz, unsigned int spi_mode);
 
 void spi_boot(void) __noreturn;
 void spi_spl_load_image(uint32_t offs, unsigned int size, void *vdst);
