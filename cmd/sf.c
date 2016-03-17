@@ -18,6 +18,7 @@
 
 #include <asm/io.h>
 #include <dm/device-internal.h>
+#include <dm/uclass-internal.h>
 
 static spi_flash_t *flash;
 
@@ -120,7 +121,15 @@ static int do_spi_flash_probe(int argc, char * const argv[])
 
 #ifdef CONFIG_DM_MTD_SPI_NOR
 	/* Remove the old device, otherwise probe will just be a nop */
+	ret = uclass_find_device_by_seq(UCLASS_MTD, bus, false, &new);
+	if (ret) {
+		debug("%s: No bus %d\n", __func__, bus);
+		goto old_remove;
+	}
+
 	ret = spi_find_bus_and_cs(bus, cs, &bus_dev, &new);
+
+old_remove:
 	if (!ret) {
 		device_remove(new);
 		device_unbind(new);
