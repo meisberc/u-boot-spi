@@ -12,10 +12,8 @@
 #include <dm.h>
 #include <malloc.h>
 #include <spi.h>
-#include <os.h>
-
 #include <spi_flash.h>
-#include "sf_internal.h"
+#include <os.h>
 
 #include <asm/getopt.h>
 #include <asm/spi.h>
@@ -23,6 +21,8 @@
 #include <dm/device-internal.h>
 #include <dm/lists.h>
 #include <dm/uclass-internal.h>
+
+#include <linux/mtd/spi-nor.h>
 
 DECLARE_GLOBAL_DATA_PTR;
 
@@ -88,7 +88,7 @@ struct sandbox_spi_flash {
 	/* The current flash status (see STAT_XXX defines above) */
 	u16 status;
 	/* Data describing the flash we're emulating */
-	const struct spi_flash_params *data;
+	const struct spi_nor_info *data;
 	/* The file on disk to serv up data from */
 	int fd;
 };
@@ -112,7 +112,7 @@ static int sandbox_sf_probe(struct udevice *dev)
 	struct sandbox_spi_flash *sbsf = dev_get_priv(dev);
 	const char *file;
 	size_t len, idname_len;
-	const struct spi_flash_params *data;
+	const struct spi_nor_info *data;
 	struct sandbox_spi_flash_plat_data *pdata = dev_get_platdata(dev);
 	struct sandbox_state *state = state_get_current();
 	struct udevice *bus = dev->parent;
@@ -168,7 +168,7 @@ static int sandbox_sf_probe(struct udevice *dev)
 	}
 	debug("%s: device='%s'\n", __func__, spec);
 
-	for (data = spi_flash_params_table; data->name; data++) {
+	for (data = spi_nor_ids; data->name; data++) {
 		len = strlen(data->name);
 		if (idname_len != len)
 			continue;
@@ -256,45 +256,45 @@ static int sandbox_sf_process_cmd(struct sandbox_spi_flash *sbsf, const u8 *rx,
 
 	sbsf->cmd = rx[0];
 	switch (sbsf->cmd) {
-	case CMD_READ_ID:
+	case SNOR_OP_RDID:
 		sbsf->state = SF_ID;
 		sbsf->cmd = SF_ID;
 		break;
-	case CMD_READ_ARRAY_FAST:
+	case SNOR_OP_READ_FAST:
 		sbsf->pad_addr_bytes = 1;
-	case CMD_READ_ARRAY_SLOW:
-	case CMD_PAGE_PROGRAM:
+	case SNOR_OP_READ:
+	case SNOR_OP_PP:
 		sbsf->state = SF_ADDR;
 		break;
-	case CMD_WRITE_DISABLE:
+	case SNOR_OP_WRDI:
 		debug(" write disabled\n");
 		sbsf->status &= ~STAT_WEL;
 		break;
-	case CMD_READ_STATUS:
+	case SNOR_OP_RDSR:
 		sbsf->state = SF_READ_STATUS;
 		break;
-	case CMD_READ_STATUS1:
+	case SNOR_OP_RDCR:
 		sbsf->state = SF_READ_STATUS1;
 		break;
-	case CMD_WRITE_ENABLE:
+	case SNOR_OP_WREN:
 		debug(" write enabled\n");
 		sbsf->status |= STAT_WEL;
 		break;
-	case CMD_WRITE_STATUS:
+	case SNOR_OP_WRSR:
 		sbsf->state = SF_WRITE_STATUS;
 		break;
 	default: {
 		int flags = sbsf->data->flags;
 
 		/* we only support erase here */
-		if (sbsf->cmd == CMD_ERASE_CHIP) {
+		if (sbsf->cmd == SPINOR_OP_CHIP_ERASE) {
 			sbsf->erase_size = sbsf->data->sector_size *
-				sbsf->data->nr_sectors;
-		} else if (sbsf->cmd == CMD_ERASE_4K && (flags & SECT_4K)) {
+				sbsf->data->n_sectors;
+		} else if (sbsf->cmd == SNOR_OP_BE_4K && (flags & SECT_4K)) {
 			sbsf->erase_size = 4 << 10;
-		} else if (sbsf->cmd == CMD_ERASE_32K && (flags & SECT_32K)) {
+		} else if (sbsf->cmd == SNOR_OP_BE_32K && (flags & SECT_32K)) {
 			sbsf->erase_size = 32 << 10;
-		} else if (sbsf->cmd == CMD_ERASE_64K &&
+		} else if (sbsf->cmd == SNOR_OP_SE &&
 			   !(flags & (SECT_4K | SECT_32K))) {
 			sbsf->erase_size = 64 << 10;
 		} else {
@@ -395,11 +395,11 @@ static int sandbox_sf_xfer(struct udevice *dev, unsigned int bitlen,
 				return -EIO;
 			}
 			switch (sbsf->cmd) {
-			case CMD_READ_ARRAY_FAST:
-			case CMD_READ_ARRAY_SLOW:
+			case SNOR_OP_READ_FAST:
+			case SNOR_OP_READ:
 				sbsf->state = SF_READ;
 				break;
-			case CMD_PAGE_PROGRAM:
+			case SNOR_OP_PP:
 				sbsf->state = SF_WRITE;
 				break;
 			default:
