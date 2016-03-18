@@ -101,6 +101,10 @@ struct zynq_qspi_priv {
 	int bytes_to_receive;
 	unsigned int is_inst;
 	unsigned cs_change:1;
+#ifdef CONFIG_SPI_NOR_BAR
+	u8 bar_read_opcode;
+	u8 bar_program_opcode;
+#endif
 };
 
 static void zynq_qspi_addr(u32 addr, u8 *cmd)
@@ -503,11 +507,79 @@ static int zynq_qspi_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 	return zynq_qspi_tx_then_rx(nor, &opcode, 1, buf, NULL, len);
 }
 
+#ifdef CONFIG_SPI_NOR_BAR
+static int zynq_qspi_write_bar(struct spi_nor *nor, u32 offset)
+{
+	u8 bank_sel;
+	int ret;
+
+	bank_sel = offset / (SNOR_16MB_BOUN << nor->shift);
+	if (bank_sel == nor->bank_curr)
+		goto bar_end;
+
+	ret = nor->write_reg(nor, SNOR_OP_WREN, NULL, 0);
+	if (ret)
+		return ret;
+
+	nor->cmd_buf[0] = bank_sel;
+	ret = nor->write_reg(nor, priv->bar_program_opcode, nor->cmd_buf, 1);
+	if (ret < 0) {
+		debug("spi-nor: fail to write bank register\n");
+		return ret;
+	}
+
+	ret = spi_nor_wait_till_ready(nor, SNOR_READY_WAIT_PROG);
+	if (ret < 0)
+		return ret;
+
+bar_end:
+	nor->bank_curr = bank_sel;
+	return nor->bank_curr;
+}
+
+static int zynq_qspi_read_bar(struct spi_nor *nor)
+{
+	struct mtd_info *mtd = nor->mtd;
+	u8 curr_bank = 0;
+	int ret;
+
+	if (mtd->size <= SNOR_16MB_BOUN)
+		goto bar_end;
+
+	switch (nor->id) {
+	case SNOR_MFR_SPANSION:
+		priv->bar_read_opcode = SNOR_OP_BRRD;
+		priv->bar_program_opcode = SNOR_OP_BRWR;
+		break;
+	default:
+		priv->bar_read_opcode = SNOR_OP_RDEAR;
+		priv->bar_program_opcode = SNOR_OP_WREAR;
+	}
+
+	ret = nor->read_reg(nor, priv->bar_read_opcode, &curr_bank, 1);
+	if (ret) {
+		debug("spi-nor: fail to read bank addr register\n");
+		return ret;
+	}
+
+bar_end:
+	nor->bank_curr = curr_bank;
+	return 0;
+}
+#endif
+
 static int zynq_qspi_read(struct spi_nor *nor, loff_t from, size_t len,
 			  u_char *buf)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
 	unsigned int cmd_sz = sizeof(priv->cmd) + (nor->read_dummy / 8);
+
+#ifdef CONFIG_SPI_NOR_BAR
+	int ret;
+	ret = zynq_qspi_write_bar(nor, from);
+	if (ret)
+		return ret;
+#endif
 
 	priv->cmd[0] = nor->program_opcode;
 	zynq_qspi_addr(from, priv->cmd);
@@ -520,6 +592,13 @@ static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
 {
 	struct zynq_qspi_priv *priv = nor->priv;
 
+#ifdef CONFIG_SPI_NOR_BAR
+	int ret;
+	ret = zynq_qspi_write_bar(nor, from);
+	if (ret)
+		return ret;
+#endif
+
 	priv->cmd[0] = nor->program_opcode;
 	zynq_qspi_addr(to, priv->cmd);
 
@@ -530,6 +609,13 @@ static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
 static int zynq_qspi_erase(struct spi_nor *nor, loff_t offset)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
+
+#ifdef CONFIG_SPI_NOR_BAR
+	int ret;
+	ret = zynq_qspi_write_bar(nor, offset);
+	if (ret)
+		return ret;
+#endif
 
 	priv->cmd[0] = nor->erase_opcode;
 	zynq_qspi_addr(offset, priv->cmd);
@@ -608,6 +694,12 @@ static int zynq_qspi_probe_bus(struct udevice *bus)
 	ret = spi_nor_scan(nor);
 	if (ret)
 		return -EINVAL;
+
+#ifdef CONFIG_SPI_NOR_BAR
+	ret = zynq_qspi_read_bar(nor);
+	if (ret)
+		return ret;
+#endif
 
 	ret = add_mtd_device(mtd);
 	if (ret)

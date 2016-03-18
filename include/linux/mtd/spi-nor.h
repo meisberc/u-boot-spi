@@ -176,8 +176,6 @@ extern const struct spi_nor_info spi_nor_ids[];
  * @read_opcode:	the read opcode
  * @read_dummy: 	the dummy bytes needed by the read operation
  * @program_opcode:	the program opcode
- * @bar_read_opcode:	the read opcode for bank/extended address registers
- * @bar_program_opcode: the program opcode for bank/extended address registers
  * @bank_curr:		indicates current flash bank
  * @dual:		indicates dual flash memories - dual stacked, parallel
  * @shift:		flash shift useful in dual parallel
@@ -208,11 +206,7 @@ struct spi_nor {
 	u8			read_opcode;
 	u8			read_dummy;
 	u8			program_opcode;
-#ifdef CONFIG_SPI_NOR_BAR
-	u8			bar_read_opcode;
-	u8			bar_program_opcode;
 	u8			bank_curr;
-#endif
 	u8			dual;
 	u8			shift;
 	u32			max_write_size;

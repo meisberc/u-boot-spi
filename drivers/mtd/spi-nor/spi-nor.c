@@ -173,65 +173,6 @@ static int spi_nor_wait_till_ready(struct spi_nor *nor, unsigned long timeout)
 	return -ETIMEDOUT;
 }
 
-#ifdef CONFIG_SPI_NOR_BAR
-static int spi_nor_write_bar(struct spi_nor *nor, u32 offset)
-{
-	u8 bank_sel;
-	int ret;
-
-	bank_sel = offset / (SNOR_16MB_BOUN << nor->shift);
-	if (bank_sel == nor->bank_curr)
-		goto bar_end;
-
-	write_enable(nor);
-
-	nor->cmd_buf[0] = bank_sel;
-	ret = nor->write_reg(nor, nor->bar_program_opcode, nor->cmd_buf, 1);
-	if (ret < 0) {
-		debug("spi-nor: fail to write bank register\n");
-		return ret;
-	}
-
-	ret = spi_nor_wait_till_ready(nor, SNOR_READY_WAIT_PROG);
-	if (ret < 0)
-		return ret;
-
-bar_end:
-	nor->bank_curr = bank_sel;
-	return nor->bank_curr;
-}
-
-static int spi_nor_read_bar(struct spi_nor *nor, const struct spi_nor_info *info)
-{
-	struct mtd_info *mtd = nor->mtd;
-	u8 curr_bank = 0;
-	int ret;
-
-	if (mtd->size <= SNOR_16MB_BOUN)
-		goto bar_end;
-
-	switch (JEDEC_MFR(info)) {
-	case SNOR_MFR_SPANSION:
-		nor->bar_read_opcode = SNOR_OP_BRRD;
-		nor->bar_program_opcode = SNOR_OP_BRWR;
-		break;
-	default:
-		nor->bar_read_opcode = SNOR_OP_RDEAR;
-		nor->bar_program_opcode = SNOR_OP_WREAR;
-	}
-
-	ret = nor->read_reg(nor, nor->bar_read_opcode, &curr_bank, 1);
-	if (ret) {
-		debug("spi-nor: fail to read bank addr register\n");
-		return ret;
-	}
-
-bar_end:
-	nor->bank_curr = curr_bank;
-	return 0;
-}
-#endif
-
 #ifdef CONFIG_SF_DUAL_FLASH
 static void spi_nor_dual(struct spi_nor *nor, u32 *addr)
 {
@@ -504,11 +445,6 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &erase_addr);
 #endif
-#ifdef CONFIG_SPI_NOR_BAR
-		ret = spi_nor_write_bar(nor, erase_addr);
-		if (ret < 0)
-			return ret;
-#endif
 		write_enable(nor);
 
 		ret = nor->erase(nor, erase_addr);
@@ -560,11 +496,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &write_addr);
 #endif
-#ifdef CONFIG_SPI_NOR_BAR
-		ret = spi_nor_write_bar(nor, write_addr);
-		if (ret < 0)
-			return ret;
-#endif
 		byte_addr = to % page_size;
 		chunk_len = min(len - actual, (size_t)(page_size - byte_addr));
 
@@ -594,7 +525,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 {
 	struct spi_nor *nor = mtd->priv;
 	u32 remain_len, read_len, read_addr;
-	int bank_sel = 0;
 	int ret = -1;
 
 	/* Handle memory-mapped SPI */
@@ -615,14 +545,8 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			spi_nor_dual(nor, &read_addr);
 #endif
-#ifdef CONFIG_SPI_NOR_BAR
-		ret = spi_nor_write_bar(nor, read_addr);
-		if (ret < 0)
-			return ret;
-		bank_sel = nor->bank_curr;
-#endif
 		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
-				(bank_sel + 1)) - from;
+				(nor->bank_curr + 1)) - from;
 		if (len < remain_len)
 			read_len = len;
 		else
@@ -1055,13 +979,6 @@ int spi_nor_scan(struct spi_nor *nor)
 	default:
 		nor->read_dummy = 8;
 	}
-
-	/* Configure the BAR - discover bank cmds and read current bank */
-#ifdef CONFIG_SPI_NOR_BAR
-	ret = spi_nor_read_bar(nor, info);
-	if (ret < 0)
-		return ret;
-#endif
 
 #if CONFIG_IS_ENABLED(OF_CONTROL)
 	ret = spi_nor_decode_fdt(gd->fdt_blob, nor);
