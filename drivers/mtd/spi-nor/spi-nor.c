@@ -492,7 +492,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 			size_t *retlen, u_char *buf)
 {
 	struct spi_nor *nor = mtd->priv;
-	u32 remain_len, read_len, read_addr;
 	int ret = -1;
 
 	/* Handle memory-mapped SPI */
@@ -506,25 +505,11 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 		return ret;
 	}
 
-	while (len) {
-		read_addr = from;
+	ret = nor->read(nor, from, len, buf);
+	if (ret < 0)
+		return ret;
 
-		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
-				(nor->bank_curr + 1)) - from;
-		if (len < remain_len)
-			read_len = len;
-		else
-			read_len = remain_len;
-
-		ret = nor->read(nor, read_addr, read_len, buf);
-		if (ret < 0)
-			break;
-
-		from += read_len;
-		len -= read_len;
-		buf += read_len;
-		*retlen += read_len;
-	}
+	*retlen += len;
 
 	return ret;
 }

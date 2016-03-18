@@ -107,6 +107,7 @@ struct zynq_qspi_priv {
 #ifdef CONFIG_SPI_NOR_BAR
 	u8 bar_read_opcode;
 	u8 bar_program_opcode;
+	u8 bank_curr;
 #endif
 };
 
@@ -537,11 +538,12 @@ static void zynq_qspi_dual(struct spi_nor *nor, u32 *addr)
 #ifdef CONFIG_SPI_NOR_BAR
 static int zynq_qspi_write_bar(struct spi_nor *nor, u32 offset)
 {
+	struct zynq_qspi_priv *priv = nor->priv;
 	u8 bank_sel;
 	int ret;
 
 	bank_sel = offset / (SNOR_16MB_BOUN << nor->shift);
-	if (bank_sel == nor->bank_curr)
+	if (bank_sel == priv->bank_curr)
 		goto bar_end;
 
 	ret = nor->write_reg(nor, SNOR_OP_WREN, NULL, 0);
@@ -560,8 +562,8 @@ static int zynq_qspi_write_bar(struct spi_nor *nor, u32 offset)
 		return ret;
 
 bar_end:
-	nor->bank_curr = bank_sel;
-	return nor->bank_curr;
+	priv->bank_curr = bank_sel;
+	return priv->bank_curr;
 }
 
 static int zynq_qspi_read_bar(struct spi_nor *nor)
@@ -590,7 +592,7 @@ static int zynq_qspi_read_bar(struct spi_nor *nor)
 	}
 
 bar_end:
-	nor->bank_curr = curr_bank;
+	priv->bank_curr = curr_bank;
 	return 0;
 }
 #endif
@@ -600,23 +602,45 @@ static int zynq_qspi_read(struct spi_nor *nor, loff_t from, size_t len,
 {
 	struct zynq_qspi_priv *priv = nor->priv;
 	unsigned int cmd_sz = sizeof(priv->cmd) + (nor->read_dummy / 8);
+	u32 addr, read_len, remain_len;
+	int bank_sel = 0;
+	int ret;
+
+	priv->cmd[0] = nor->program_opcode;
+	while (len) {
+		addr = from;
 
 #ifdef CONFIG_SF_DUAL_FLASH
-	if (nor->dual > SNOR_DUAL_SINGLE)
-		zynq_qspi_dual(nor, &from);
+		if (nor->dual > SNOR_DUAL_SINGLE)
+			zynq_qspi_dual(nor, &from);
 #endif
 
 #ifdef CONFIG_SPI_NOR_BAR
-	int ret;
-	ret = zynq_qspi_write_bar(nor, from);
-	if (ret)
-		return ret;
+		ret = zynq_qspi_write_bar(nor, from);
+		if (ret)
+			return ret;
+		bank_sel = priv->bank_curr;
 #endif
+		zynq_qspi_addr(from, priv->cmd);
 
-	priv->cmd[0] = nor->program_opcode;
-	zynq_qspi_addr(from, priv->cmd);
+		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
+					(bank_sel + 1)) - from;
+		if (len < remain_len)
+			read_len = len;
+		else
+			read_len = remain_len;
 
-	return zynq_qspi_tx_then_rx(nor, priv->cmd, cmd_sz, NULL, buf, len);
+		ret = zynq_qspi_tx_then_rx(nor, priv->cmd, cmd_sz, NULL,
+					   buf, read_len);
+		if (ret)
+			break;
+
+		from += read_len;
+		len -= read_len;
+		buf += read_len;
+	}
+
+	return ret;
 }
 
 static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
