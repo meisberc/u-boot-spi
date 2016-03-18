@@ -981,15 +981,5 @@ int spi_nor_scan(struct spi_nor *nor)
 	puts("\n");
 #endif
 
-#ifndef CONFIG_SPI_NOR_BAR
-	if (((nor->dual == SNOR_DUAL_SINGLE) &&
-	     (mtd->size > SNOR_16MB_BOUN)) ||
-	     ((nor->dual > SNOR_DUAL_SINGLE) &&
-	     (mtd->size > SNOR_16MB_BOUN << 1))) {
-		puts("spi-nor: Warning - Only lower 16MiB accessible,");
-		puts(" Full access #define CONFIG_SPI_NOR_BAR\n");
-	}
-#endif
-
 	return ret;
 }
