@@ -102,11 +102,9 @@ struct zynq_qspi_priv {
 	int bytes_to_receive;
 	unsigned int is_inst;
 	unsigned cs_change:1;
-#ifdef CONFIG_SPI_NOR_BAR
 	u8 bar_read_opcode;
 	u8 bar_program_opcode;
 	u8 bank_curr;
-#endif
 };
 
 static void zynq_qspi_addr(u32 addr, u8 *cmd)
@@ -531,7 +529,6 @@ static void zynq_qspi_dual(struct spi_nor *nor, u32 *addr)
 	}
 }
 
-#ifdef CONFIG_SPI_NOR_BAR
 static int zynq_qspi_write_bar(struct spi_nor *nor, u32 offset)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
@@ -599,7 +596,6 @@ static int zynq_qspi_read(struct spi_nor *nor, loff_t from, size_t len,
 	struct zynq_qspi_priv *priv = nor->priv;
 	unsigned int cmd_sz = sizeof(priv->cmd) + (nor->read_dummy / 8);
 	u32 addr, read_len, remain_len;
-	int bank_sel = 0;
 	int ret;
 
 	priv->cmd[0] = nor->program_opcode;
@@ -609,16 +605,14 @@ static int zynq_qspi_read(struct spi_nor *nor, loff_t from, size_t len,
 		if (nor->dual > SNOR_DUAL_SINGLE)
 			zynq_qspi_dual(nor, &from);
 
-#ifdef CONFIG_SPI_NOR_BAR
 		ret = zynq_qspi_write_bar(nor, from);
 		if (ret)
 			return ret;
-		bank_sel = priv->bank_curr;
-#endif
+
 		zynq_qspi_addr(from, priv->cmd);
 
 		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
-					(bank_sel + 1)) - from;
+					(priv->bank_curr + 1)) - from;
 		if (len < remain_len)
 			read_len = len;
 		else
@@ -641,16 +635,14 @@ static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
 			   const u_char *buf)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
+	int ret;
 
 	if (nor->dual > SNOR_DUAL_SINGLE)
 		zynq_qspi_dual(nor, &to);
 
-#ifdef CONFIG_SPI_NOR_BAR
-	int ret;
 	ret = zynq_qspi_write_bar(nor, from);
 	if (ret)
 		return ret;
-#endif
 
 	priv->cmd[0] = nor->program_opcode;
 	zynq_qspi_addr(to, priv->cmd);
@@ -662,16 +654,14 @@ static int zynq_qspi_write(struct spi_nor *nor, loff_t to, size_t len,
 static int zynq_qspi_erase(struct spi_nor *nor, loff_t offset)
 {
 	struct zynq_qspi_priv *priv = nor->priv;
+	int ret;
 
 	if (nor->dual > SNOR_DUAL_SINGLE)
 		zynq_qspi_dual(nor, &offset);
 
-#ifdef CONFIG_SPI_NOR_BAR
-	int ret;
 	ret = zynq_qspi_write_bar(nor, offset);
 	if (ret)
 		return ret;
-#endif
 
 	priv->cmd[0] = nor->erase_opcode;
 	zynq_qspi_addr(offset, priv->cmd);
@@ -756,11 +746,9 @@ static int zynq_qspi_probe_bus(struct udevice *bus)
 	if (ret)
 		return -EINVAL;
 
-#ifdef CONFIG_SPI_NOR_BAR
 	ret = zynq_qspi_read_bar(nor);
 	if (ret)
 		return ret;
-#endif
 
 	ret = add_mtd_device(mtd);
 	if (ret)
