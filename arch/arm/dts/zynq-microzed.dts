@@ -14,7 +14,7 @@
 
 	aliases {
 		serial0 = &uart1;
-		spi0 = &qspi;
+		mtd0 = &qspi;
 	};
 
 	memory {

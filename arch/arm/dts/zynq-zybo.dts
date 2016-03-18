@@ -16,7 +16,7 @@
 	aliases {
 		ethernet0 = &gem0;
 		serial0 = &uart1;
-		spi0 = &qspi;
+		mtd0 = &qspi;
 		mmc0 = &sdhci0;
 	};
 
