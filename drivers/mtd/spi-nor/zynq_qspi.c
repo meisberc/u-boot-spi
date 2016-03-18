@@ -748,6 +748,7 @@ static int zynq_qspi_probe_bus(struct udevice *bus)
 	nor->read_reg = zynq_qspi_read_reg;
 	nor->write_reg = zynq_qspi_write_reg;
 
+	nor->flags = SNOR_F_USE_3BADDR;
 	nor->dual = plat->dual;
 	nor->shift = (nor->dual & SNOR_DUAL_PARALLEL) ? 1 : 0;
 
