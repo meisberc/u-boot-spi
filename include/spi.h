@@ -30,10 +30,6 @@
 #define SPI_RX_DUAL	BIT(12)			/* receive with 2 wires */
 #define SPI_RX_QUAD	BIT(13)			/* receive with 4 wires */
 
-/* SPI bus connection options - see enum spi_dual_flash */
-#define SPI_CONN_DUAL_SHARED		(1 << 0)
-#define SPI_CONN_DUAL_SEPARATED	(1 << 1)
-
 /* Header byte that marks the start of the message */
 #define SPI_PREAMBLE_END_BYTE	0xec
 
@@ -93,7 +89,6 @@ struct dm_spi_slave_platdata {
  * @max_write_size:	If non-zero, the maximum number of bytes which can
  *			be written at once, excluding command bytes.
  * @memory_map:		Address of read-only SPI flash access.
- * @option:		Varies SPI bus options - separate, shared bus.
  * @flags:		Indication of SPI flags.
  */
 struct spi_slave {
@@ -109,7 +104,6 @@ struct spi_slave {
 	unsigned int wordlen;
 	unsigned int max_write_size;
 	void *memory_map;
-	u8 option;
 
 	u8 flags;
 #define SPI_XFER_BEGIN		BIT(0)	/* Assert CS before transfer */

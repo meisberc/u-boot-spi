@@ -53,9 +53,6 @@ static int m25p80_read_reg(struct spi_nor *nor, u8 opcode, u8 *val, int len)
 		return ret;
 	}
 
-	if (nor->flags & SNOR_F_U_PAGE)
-		spi->flags |= SPI_XFER_U_PAGE;
-
 	ret = spi_write_then_read(spi, &opcode, 1, NULL, val, len);
 	if (ret < 0) {
 		debug("m25p80: error %d reading register %x\n", ret, opcode);
@@ -78,9 +75,6 @@ static int m25p80_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 		debug("m25p80: unable to claim SPI bus\n");
 		return ret;
 	}
-
-	if (nor->flags & SNOR_F_U_PAGE)
-		spi->flags |= SPI_XFER_U_PAGE;
 
 	ret = spi_write_then_read(spi, &opcode, 1, buf, NULL, len);
 	if (ret < 0) {
@@ -148,9 +142,6 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 	flash->command[0] = nor->read_opcode;
 	m25p_addr2cmd(nor, from, flash->command);
 
-	if (nor->flags & SNOR_F_U_PAGE)
-		spi->flags |= SPI_XFER_U_PAGE;
-
 	ret = spi_write_then_read(spi, flash->command, m25p_cmdsz(nor) + dummy,
 				  NULL, buf, len);
 	if (ret < 0) {
@@ -182,9 +173,6 @@ static int m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
 
 	flash->command[0] = nor->program_opcode;
 	m25p_addr2cmd(nor, to, flash->command);
-
-	if (nor->flags & SNOR_F_U_PAGE)
-		spi->flags |= SPI_XFER_U_PAGE;
 
 	debug("m25p80: 0x%p => cmd = { 0x%02x 0x%02x%02x%02x } chunk_len = %zu\n",
 	       buf, flash->command[0], flash->command[1], flash->command[2],
@@ -270,12 +258,6 @@ static int m25p80_spi_nor(struct spi_nor *nor)
 
 	nor->memory_map = spi->memory_map;
 	nor->max_write_size = spi->max_write_size;
-
-	/* TODO: unrelated to spi_slave{} */
-	if (spi->option & SPI_CONN_DUAL_SHARED)
-		nor->dual = SNOR_DUAL_STACKED;
-	else if (spi->option & SPI_CONN_DUAL_SEPARATED)
-		nor->dual = SNOR_DUAL_PARALLEL;
 
 	ret = spi_nor_scan(nor);
 	if (ret)

@@ -173,30 +173,6 @@ static int spi_nor_wait_till_ready(struct spi_nor *nor, unsigned long timeout)
 	return -ETIMEDOUT;
 }
 
-#ifdef CONFIG_SF_DUAL_FLASH
-static void spi_nor_dual(struct spi_nor *nor, u32 *addr)
-{
-	struct mtd_info *mtd = nor->mtd;
-
-	switch (nor->dual) {
-	case SNOR_DUAL_STACKED:
-		if (*addr >= (mtd->size >> 1)) {
-			*addr -= mtd->size >> 1;
-			nor->flags |= SNOR_F_U_PAGE;
-		} else {
-			nor->flags &= ~SNOR_F_U_PAGE;
-		}
-		break;
-	case SNOR_DUAL_PARALLEL:
-		*addr >>= nor->shift;
-		break;
-	default:
-		debug("spi-nor: Unsupported dual_flash=%d\n", nor->dual);
-		break;
-	}
-}
-#endif
-
 #if defined(CONFIG_SPI_NOR_STMICRO) || defined(CONFIG_SPI_NOR_SST)
 static void stm_get_locked_range(struct spi_nor *nor, u8 sr, loff_t *ofs,
 				 uint64_t *len)
@@ -441,10 +417,6 @@ static int spi_nor_erase(struct mtd_info *mtd, struct erase_info *instr)
 	while (len) {
 		erase_addr = addr;
 
-#ifdef CONFIG_SF_DUAL_FLASH
-		if (nor->dual > SNOR_DUAL_SINGLE)
-			spi_nor_dual(nor, &erase_addr);
-#endif
 		write_enable(nor);
 
 		ret = nor->erase(nor, erase_addr);
@@ -492,10 +464,6 @@ static int spi_nor_write(struct mtd_info *mtd, loff_t to, size_t len,
 	for (actual = 0; actual < len; actual += chunk_len) {
 		write_addr = to;
 
-#ifdef CONFIG_SF_DUAL_FLASH
-		if (nor->dual > SNOR_DUAL_SINGLE)
-			spi_nor_dual(nor, &write_addr);
-#endif
 		byte_addr = to % page_size;
 		chunk_len = min(len - actual, (size_t)(page_size - byte_addr));
 
@@ -541,10 +509,6 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 	while (len) {
 		read_addr = from;
 
-#ifdef CONFIG_SF_DUAL_FLASH
-		if (nor->dual > SNOR_DUAL_SINGLE)
-			spi_nor_dual(nor, &read_addr);
-#endif
 		remain_len = ((SNOR_16MB_BOUN << nor->shift) *
 				(nor->bank_curr + 1)) - from;
 		if (len < remain_len)
