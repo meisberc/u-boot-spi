@@ -160,7 +160,7 @@ const struct pinmux_config halten_pin[] = {
 };
 
 static const struct pinmux_resource pinmuxes[] = {
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 	PINMUX_ITEM(spi1_pins),
 #endif
 	PINMUX_ITEM(uart_pins),

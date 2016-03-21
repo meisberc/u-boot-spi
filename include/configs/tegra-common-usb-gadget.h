@@ -36,7 +36,7 @@
 #ifdef CONFIG_MMC
 #define CONFIG_DFU_MMC
 #endif
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 #define CONFIG_DFU_SF
 #endif
 #define CONFIG_DFU_RAM

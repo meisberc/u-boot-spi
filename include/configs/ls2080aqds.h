@@ -284,7 +284,8 @@ unsigned long get_board_ddr_clk(void);
 /* SPI */
 #ifdef CONFIG_FSL_DSPI
 #define CONFIG_CMD_SF
-#define CONFIG_SPI_FLASH
+#define CONFIG_MTD_SPI_NOR
+#define CONFIG_MTD_M25P80
 #endif
 
 /*

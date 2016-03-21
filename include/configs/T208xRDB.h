@@ -79,7 +79,8 @@
 #ifdef CONFIG_SPIFLASH
 #define        CONFIG_RESET_VECTOR_ADDRESS             0x200FFC
 #define CONFIG_SPL_SPI_SUPPORT
-#define CONFIG_SPL_SPI_FLASH_SUPPORT
+#define CONFIG_SPL_SPI_NOR_SUPPORT
+#define CONFIG_SPL_MTD_SUPPORT
 #define CONFIG_SPL_SPI_FLASH_MINIMAL
 #define CONFIG_SYS_SPI_FLASH_U_BOOT_SIZE       (768 << 10)
 #define CONFIG_SYS_SPI_FLASH_U_BOOT_DST                (0x00200000)
@@ -494,7 +495,7 @@ unsigned long get_board_ddr_clk(void);
 /*
  * eSPI - Enhanced SPI
  */
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 #define CONFIG_SPI_FLASH_BAR
 #define CONFIG_CMD_SF
 #define CONFIG_SF_DEFAULT_SPEED	 10000000

@@ -113,7 +113,7 @@ config X86
 	select DM_SERIAL
 	select DM_GPIO
 	select DM_SPI
-	select DM_SPI_FLASH
+	select MTD
 
 endchoice
 
