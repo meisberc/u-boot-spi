@@ -62,7 +62,7 @@
 #define CONFIG_MXC_UART
 #define CONFIG_MXC_UART_BASE	       UART2_BASE
 
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 
 /* SPI */
 #define CONFIG_CMD_SF
@@ -94,7 +94,7 @@
   #define CONFIG_APBH_DMA_BURST8
 #endif
 
-#endif /* CONFIG_SPI_FLASH */
+#endif /* CONFIG_MTD_SPI_NOR */
 
 /* I2C Configs */
 #define CONFIG_CMD_I2C
@@ -249,7 +249,7 @@
 #define CONFIG_CMD_MTDPARTS
 #define CONFIG_MTD_DEVICE
 #define CONFIG_MTD_PARTITIONS
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 #define MTDIDS_DEFAULT    "nor0=nor"
 #define MTDPARTS_DEFAULT  \
 	"mtdparts=nor:512k(uboot),64k(env),2m(kernel),-(rootfs)"
@@ -259,7 +259,7 @@
 #endif
 
 /* Persistent Environment Config */
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 #define CONFIG_ENV_IS_IN_SPI_FLASH
 #else
 #define CONFIG_ENV_IS_IN_NAND
@@ -365,7 +365,7 @@
 			"fi; " \
 		"fi\0"
 
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 	#define CONFIG_EXTRA_ENV_SETTINGS \
 	CONFIG_EXTRA_ENV_SETTINGS_COMMON \
 	"image_os=ventana/openwrt-imx6-imx6q-gw5400-a-squashfs.bin\0" \

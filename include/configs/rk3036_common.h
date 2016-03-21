@@ -66,7 +66,6 @@
 #define CONFIG_NR_DRAM_BANKS		1
 #define SDRAM_BANK_SIZE			(512UL << 20UL)
 
-#define CONFIG_SPI_FLASH
 #define CONFIG_SPI
 #define CONFIG_CMD_SF
 #define CONFIG_CMD_SPI

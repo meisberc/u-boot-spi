@@ -321,7 +321,6 @@
 /* DM SPI */
 #if defined(CONFIG_FSL_DSPI) || defined(CONFIG_FSL_QSPI)
 #define CONFIG_CMD_SF
-#define CONFIG_DM_SPI_FLASH
 #endif
 
 /*

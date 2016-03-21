@@ -51,7 +51,7 @@
 /*
  *  Environment variables configurations
  */
-#ifdef CONFIG_SPI_FLASH
+#ifdef CONFIG_MTD_SPI_NOR
 #define CONFIG_ENV_IS_IN_SPI_FLASH	1
 #define CONFIG_ENV_SECT_SIZE		0x10000	/* 64k */
 #else

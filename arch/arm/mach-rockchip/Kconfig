@@ -32,7 +32,7 @@ config DM_SERIAL
 config DM_SPI
 	default y
 
-config DM_SPI_FLASH
+config MTD
 	default y
 
 config DM_I2C

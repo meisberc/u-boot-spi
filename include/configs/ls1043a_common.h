@@ -195,7 +195,7 @@
 #define CONFIG_FSL_DSPI
 #ifdef CONFIG_FSL_DSPI
 #define CONFIG_CMD_SF
-#define CONFIG_DM_SPI_FLASH
+#define CONFIG_MTD
 #define CONFIG_SPI_FLASH_STMICRO	/* cs0 */
 #define CONFIG_SPI_FLASH_SST		/* cs1 */
 #define CONFIG_SPI_FLASH_EON		/* cs2 */

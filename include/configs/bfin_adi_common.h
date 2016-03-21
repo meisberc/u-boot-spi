@@ -64,7 +64,7 @@
 # if defined(CONFIG_BFIN_SPI) || defined(CONFIG_SOFT_SPI)
 #  define CONFIG_CMD_SPI
 # endif
-# ifdef CONFIG_SPI_FLASH
+# ifdef CONFIG_MTD_SPI_NOR
 #  define CONFIG_CMD_SF
 # endif
 # if defined(CONFIG_SYS_I2C) || defined(CONFIG_SYS_I2C_SOFT)
