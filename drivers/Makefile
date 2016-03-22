@@ -19,7 +19,6 @@ obj-$(CONFIG_ARMADA_XP) += ddr/marvell/axp/
 obj-$(CONFIG_ALTERA_SDRAM) += ddr/altera/
 obj-$(CONFIG_SPL_SERIAL_SUPPORT) += serial/
 obj-$(CONFIG_SPL_SPI_NOR_SUPPORT) += mtd/spi-nor/
-obj-$(CONFIG_SPL_SPI_FLASH_SUPPORT) += mtd/spi/
 obj-$(CONFIG_SPL_SPI_SUPPORT) += spi/
 obj-$(CONFIG_SPL_POWER_SUPPORT) += power/ power/pmic/
 obj-$(CONFIG_SPL_POWER_SUPPORT) += power/regulator/
