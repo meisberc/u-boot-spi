@@ -1,5 +1,5 @@
 /*
- * SPI NOR Core - cloned most of the code from the spi_flash.c
+ * SPI NOR Core framework.
  *
  * Copyright (C) 2016 Jagan Teki <jteki@openedev.com>
  *
