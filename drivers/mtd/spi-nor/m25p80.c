@@ -47,12 +47,6 @@ static int m25p80_read_reg(struct spi_nor *nor, u8 opcode, u8 *val, int len)
 	struct spi_slave *spi = flash->spi;
 	int ret;
 
-	ret = spi_claim_bus(spi);
-	if (ret < 0) {
-		debug("m25p80: unable to claim SPI bus\n");
-		return ret;
-	}
-
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
@@ -61,8 +55,6 @@ static int m25p80_read_reg(struct spi_nor *nor, u8 opcode, u8 *val, int len)
 		debug("m25p80: error %d reading register %x\n", ret, opcode);
 		return ret;
 	}
-
-	spi_release_bus(spi);
 
 	return ret;
 }
@@ -73,12 +65,6 @@ static int m25p80_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 	struct spi_slave *spi = flash->spi;
 	int ret;
 
-	ret = spi_claim_bus(spi);
-	if (ret < 0) {
-		debug("m25p80: unable to claim SPI bus\n");
-		return ret;
-	}
-
 	if (nor->flags & SNOR_F_U_PAGE)
 		spi->flags |= SPI_XFER_U_PAGE;
 
@@ -87,8 +73,6 @@ static int m25p80_write_reg(struct spi_nor *nor, u8 opcode, u8 *buf, int len)
 		debug("m25p80: error %d writing register %x\n", ret, opcode);
 		return ret;
 	}
-
-	spi_release_bus(spi);
 
 	return ret;
 }
@@ -114,12 +98,6 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 	unsigned int dummy = nor->read_dummy;
 	int ret;
 
-	ret = spi_claim_bus(spi);
-	if (ret < 0) {
-		debug("m25p80: unable to claim SPI bus\n");
-		return ret;
-	}
-
 	if (nor->memory_map) {
 		spi_xfer(spi, 0, NULL, NULL, SPI_XFER_MMAP);
 		flash_copy_mmap(buf, nor->memory_map + from, len);
@@ -144,8 +122,6 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 		return ret;
 	}
 
-	spi_release_bus(spi);
-
 	return ret;
 }
 
@@ -156,12 +132,6 @@ static int m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
 	struct spi_slave *spi = flash->spi;
 	int cmd_sz = m25p_cmdsz(nor);
 	int ret;
-
-	ret = spi_claim_bus(spi);
-	if (ret < 0) {
-		debug("m25p80: unable to claim SPI bus\n");
-		return ret;
-	}
 
 	if ((nor->program_opcode == SNOR_OP_AAI_WP) && (buf != NULL))
 		cmd_sz = 1;
@@ -183,8 +153,6 @@ static int m25p80_write(struct spi_nor *nor, loff_t to, size_t len,
 		debug("m25p80: error %d writing %x\n", ret, flash->command[0]);
 		return ret;
 	}
-
-	spi_release_bus(spi);
 
 	return ret;
 }
