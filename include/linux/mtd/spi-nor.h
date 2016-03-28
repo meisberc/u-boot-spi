@@ -62,10 +62,6 @@
 #define SNOR_OP_BP		0x02	/* Byte program */
 #define SNOR_OP_AAI_WP		0xad	/* Auto addr increment word program */
 
-/* Used for Micron flashes only. */
-#define SPINOR_OP_RD_EVCR      0x65    /* Read EVCR register */
-#define SPINOR_OP_WD_EVCR      0x61    /* Write EVCR register */
-
 /* Status Register bits. */
 #define SR_WIP			BIT(0)	/* Write in progress */
 #define SR_WEL			BIT(1)	/* Write enable latch */
@@ -77,9 +73,6 @@
 #define SR_SRWD		BIT(7)	/* SR write protect */
 
 #define SR_QUAD_EN_MX		BIT(6)	/* Macronix Quad I/O */
-
-/* Enhanced Volatile Configuration Register bits */
-#define EVCR_QUAD_EN_MICRON	BIT(7)	/* Micron Quad I/O */
 
 /* Flag Status Register bits */
 #define FSR_READY		BIT(7)

@@ -96,28 +96,6 @@ static int write_sr_cr(struct spi_nor *nor, u16 val)
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_STMICRO
-static int read_evcr(struct spi_nor *nor)
-{
-	u8 evcr;
-	int ret;
-
-	ret = nor->read_reg(nor, SPINOR_OP_RD_EVCR, &evcr, 1);
-	if (ret < 0) {
-		debug("spi-nor: fail to read EVCR\n");
-		return ret;
-	}
-
-	return evcr;
-}
-
-static int write_evcr(struct spi_nor *nor, u8 evcr)
-{
-	nor->cmd_buf[0] = evcr;
-	return nor->write_reg(nor, SPINOR_OP_WD_EVCR, nor->cmd_buf, 1);
-}
-#endif
-
 static int spi_nor_sr_ready(struct spi_nor *nor)
 {
 	int sr = read_sr(nor);
@@ -776,33 +754,6 @@ static int spansion_quad_enable(struct spi_nor *nor)
 }
 #endif
 
-#ifdef CONFIG_SPI_FLASH_STMICRO
-static int micron_quad_enable(struct spi_nor *nor)
-{
-	int ret, val;
-
-	val = read_evcr(nor);
-	if (val < 0)
-		return val;
-
-	if (!(val & EVCR_QUAD_EN_MICRON))
-		return 0;
-
-	ret = write_evcr(nor, val & ~EVCR_QUAD_EN_MICRON);
-	if (ret < 0)
-		return ret;
-
-	/* read EVCR and check it */
-	ret = read_evcr(nor);
-	if (!(ret > 0 && !(ret & EVCR_QUAD_EN_MICRON))) {
-		printf("spi-nor: Micron EVCR Quad bit not clear\n");
-		return -EINVAL;
-	}
-
-	return ret;
-}
-#endif
-
 static int set_quad_mode(struct spi_nor *nor, const struct spi_nor_info *info)
 {
 	switch (JEDEC_MFR(info)) {
@@ -817,7 +768,7 @@ static int set_quad_mode(struct spi_nor *nor, const struct spi_nor_info *info)
 #endif
 #ifdef CONFIG_SPI_FLASH_STMICRO
 	case SNOR_MFR_MICRON:
-		return micron_quad_enable(nor);
+		return 0;
 #endif
 	default:
 		printf("spi-nor: Need set QEB func for %02x flash\n",
