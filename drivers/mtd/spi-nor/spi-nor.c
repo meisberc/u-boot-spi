@@ -579,7 +579,7 @@ static int spi_nor_read(struct mtd_info *mtd, loff_t from, size_t len,
 
 	/* Handle memory-mapped SPI */
 	if (nor->memory_map) {
-		ret = nor->read_mmap(nor, buf, nor->memory_map + from, len);
+		ret = nor->read(nor, from, len, buf);
 		if (ret) {
 			debug("spi-nor: mmap read failed\n");
 			return ret;

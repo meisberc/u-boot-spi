@@ -188,7 +188,6 @@ extern const struct spi_nor_info spi_nor_ids[];
  * @cmd_buf:		used by the write_reg
  * @read_reg:		[DRIVER-SPECIFIC] read out the register
  * @write_reg:		[DRIVER-SPECIFIC] write data to the register
- * @read_mmap:		[DRIVER-SPECIFIC] read data from the mmapped SPI NOR
  * @read:		[DRIVER-SPECIFIC] read data from the SPI NOR
  * @write:		[DRIVER-SPECIFIC] write data to the SPI NOR
  * @memory_map:	address of read-only SPI NOR access
@@ -218,8 +217,6 @@ struct spi_nor {
 	int (*read_reg)(struct spi_nor *nor, u8 cmd, u8 *val, int len);
 	int (*write_reg)(struct spi_nor *nor, u8 cmd, u8 *data, int len);
 
-	int (*read_mmap)(struct spi_nor *nor, void *data, void *offset,
-			size_t len);
 	int (*read)(struct spi_nor *nor, loff_t from, size_t len,
 		    u_char *read_buf);
 	int (*write)(struct spi_nor *nor, loff_t to, size_t len,

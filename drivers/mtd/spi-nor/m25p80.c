@@ -100,28 +100,6 @@ void __weak flash_copy_mmap(void *data, void *offset, size_t len)
 	memcpy(data, offset, len);
 }
 
-static int m25p80_read_mmap(struct spi_nor *nor, void *data,
-			    void *offset, size_t len)
-{
-	struct m25p *flash = nor->priv;
-	struct spi_slave *spi = flash->spi;
-	int ret;
-
-	ret = spi_claim_bus(spi);
-	if (ret) {
-		debug("m25p80: unable to claim SPI bus\n");
-		return ret;
-	}
-
-	spi_xfer(spi, 0, NULL, NULL, SPI_XFER_MMAP);
-	flash_copy_mmap(data, offset, len);
-	spi_xfer(spi, 0, NULL, NULL, SPI_XFER_MMAP_END);
-
-	spi_release_bus(spi);
-
-	return ret;
-}
-
 static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 		       u_char *buf)
 {
@@ -133,6 +111,14 @@ static int m25p80_read(struct spi_nor *nor, loff_t from, size_t len,
 	if (ret < 0) {
 		debug("m25p80: unable to claim SPI bus\n");
 		return ret;
+	}
+
+	if (nor->memory_map) {
+		spi_xfer(spi, 0, NULL, NULL, SPI_XFER_MMAP);
+		flash_copy_mmap(buf, nor->memory_map + from, len);
+		spi_xfer(spi, 0, NULL, NULL, SPI_XFER_MMAP_END);
+		spi_release_bus(spi);
+		return 0;
 	}
 
 	flash->command[0] = nor->read_opcode;
@@ -201,7 +187,6 @@ static int m25p80_spi_nor(struct spi_nor *nor)
 	int ret;
 
 	/* install hooks */
-	nor->read_mmap = m25p80_read_mmap;
 	nor->read = m25p80_read;
 	nor->write = m25p80_write;
 	nor->read_reg = m25p80_read_reg;
