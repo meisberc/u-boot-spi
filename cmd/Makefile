@@ -160,6 +160,10 @@ obj-$(CONFIG_CMD_SCSI) += scsi.o
 endif
 endif # CONFIG_SPL_BUILD
 
+ifneq (,$(findstring y,$(CONFIG_MTD_DEVICE)$(CONFIG_CMD_NAND)$(CONFIG_CMD_ONENAND)$(CONFIG_CMD_SF)))
+obj-y += mtd_uboot.o
+endif
+
 obj-$(CONFIG_CMD_BLOB) += blob.o
 
 # core command
