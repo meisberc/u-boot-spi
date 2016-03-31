@@ -77,7 +77,7 @@ static struct class mtd_class = {
 	.resume = mtd_cls_resume,
 };
 #else
-struct mtd_info *mtd_table[MAX_MTD_DEVICES];
+//struct mtd_info *mtd_table[MAX_MTD_DEVICES];
 
 #define MAX_IDR_ID	64
 
@@ -107,6 +107,7 @@ void *idr_find(struct idr *idp, int id)
 	return NULL;
 }
 
+#ifndef CONFIG_SPL_BUILD
 void *idr_get_next(struct idr *idp, int *next)
 {
 	void *ret;
@@ -124,6 +125,7 @@ void *idr_get_next(struct idr *idp, int *next)
 	
 	return ret;
 }
+#endif
 
 int idr_alloc(struct idr *idp, void *ptr, int start, int end, gfp_t gfp_mask)
 {
@@ -145,6 +147,7 @@ int idr_alloc(struct idr *idp, void *ptr, int start, int end, gfp_t gfp_mask)
 
 static DEFINE_IDR(mtd_idr);
 
+#ifndef CONFIG_SPL_BUILD
 /* These are exported solely for the purpose of mtd_blkdevs.c. You
    should not use them for _anything_ else */
 DEFINE_MUTEX(mtd_table_mutex);
@@ -155,6 +158,7 @@ struct mtd_info *__mtd_next_device(int i)
 	return idr_get_next(&mtd_idr, &i);
 }
 EXPORT_SYMBOL_GPL(__mtd_next_device);
+#endif
 
 #ifndef __UBOOT__
 static LIST_HEAD(mtd_notifiers);
@@ -384,6 +388,12 @@ static struct device_type mtd_devtype = {
 };
 #endif
 
+#ifdef CONFIG_SPL_BUILD
+int add_mtd_device(struct mtd_info *mtd)
+{
+	return 0;
+}
+#else
 /**
  *	add_mtd_device - register an MTD device
  *	@mtd: pointer to new MTD device info structure
@@ -495,7 +505,13 @@ fail_locked:
 	mutex_unlock(&mtd_table_mutex);
 	return 1;
 }
-
+#endif
+#ifdef CONFIG_SPL_BUILD
+int del_mtd_device(struct mtd_info *mtd)
+{
+	return 0;
+}
+#else
 /**
  *	del_mtd_device - unregister an MTD device
  *	@mtd: pointer to MTD device info structure
@@ -546,6 +562,7 @@ out_error:
 	mutex_unlock(&mtd_table_mutex);
 	return ret;
 }
+#endif
 
 #ifndef __UBOOT__
 /**
@@ -680,6 +697,7 @@ int unregister_mtd_user (struct mtd_notifier *old)
 EXPORT_SYMBOL_GPL(unregister_mtd_user);
 #endif
 
+#ifndef CONFIG_SPL_BUILD
 /**
  *	get_mtd_device - obtain a validated handle for an MTD device
  *	@mtd: last known address of the required MTD device
@@ -783,6 +801,7 @@ out_unlock:
 	return ERR_PTR(err);
 }
 EXPORT_SYMBOL_GPL(get_mtd_device_nm);
+#endif
 
 #if defined(CONFIG_CMD_MTDPARTS_SPREAD)
 /**
@@ -828,6 +847,7 @@ void mtd_get_len_incl_bad(struct mtd_info *mtd, uint64_t offset,
 }
 #endif /* defined(CONFIG_CMD_MTDPARTS_SPREAD) */
 
+#ifndef CONFIG_SPL_BUILD
 void put_mtd_device(struct mtd_info *mtd)
 {
 	mutex_lock(&mtd_table_mutex);
@@ -848,6 +868,7 @@ void __put_mtd_device(struct mtd_info *mtd)
 	module_put(mtd->owner);
 }
 EXPORT_SYMBOL_GPL(__put_mtd_device);
+#endif
 
 /*
  * Erase is an asynchronous operation.  Device drivers are supposed
@@ -907,6 +928,7 @@ int mtd_unpoint(struct mtd_info *mtd, loff_t from, size_t len)
 EXPORT_SYMBOL_GPL(mtd_unpoint);
 #endif
 
+#ifndef CONFIG_SPL_BUILD
 /*
  * Allow NOMMU mmap() to directly map the device (if not NULL)
  * - return the address to which the offset maps
@@ -922,6 +944,7 @@ unsigned long mtd_get_unmapped_area(struct mtd_info *mtd, unsigned long len,
 	return mtd->_get_unmapped_area(mtd, len, offset, flags);
 }
 EXPORT_SYMBOL_GPL(mtd_get_unmapped_area);
+#endif
 
 int mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 	     u_char *buf)
@@ -947,6 +970,7 @@ int mtd_read(struct mtd_info *mtd, loff_t from, size_t len, size_t *retlen,
 }
 EXPORT_SYMBOL_GPL(mtd_read);
 
+#ifndef CONFIG_SPL_BUILD
 int mtd_write(struct mtd_info *mtd, loff_t to, size_t len, size_t *retlen,
 	      const u_char *buf)
 {
@@ -1100,6 +1124,7 @@ int mtd_lock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	return mtd->_lock(mtd, ofs, len);
 }
 EXPORT_SYMBOL_GPL(mtd_lock);
+#endif
 
 int mtd_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
@@ -1112,6 +1137,7 @@ int mtd_unlock(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 	return mtd->_unlock(mtd, ofs, len);
 }
 EXPORT_SYMBOL_GPL(mtd_unlock);
+#ifndef CONFIG_SPL_BUILD
 
 int mtd_is_locked(struct mtd_info *mtd, loff_t ofs, uint64_t len)
 {
@@ -1156,6 +1182,7 @@ int mtd_block_markbad(struct mtd_info *mtd, loff_t ofs)
 	return mtd->_block_markbad(mtd, ofs);
 }
 EXPORT_SYMBOL_GPL(mtd_block_markbad);
+#endif
 
 #ifndef __UBOOT__
 /*
@@ -1372,8 +1399,8 @@ static void __exit cleanup_mtd(void)
 
 module_init(init_mtd);
 module_exit(cleanup_mtd);
-#endif
 
 MODULE_LICENSE("GPL");
 MODULE_AUTHOR("David Woodhouse <dwmw2@infradead.org>");
 MODULE_DESCRIPTION("Core MTD registration and access routines");
+#endif

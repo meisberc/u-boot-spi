@@ -36,11 +36,13 @@ static inline int spi_flash_read(spi_flash_t *info, u32 offset,
 	return mtd_read(info, offset, len, &len, (u_char *)buf);
 }
 
+#ifndef CONFIG_SPL_BUILD
 static inline int spi_flash_write(spi_flash_t *info, u32 offset,
 				  size_t len, const void *buf)
 {
 	return mtd_write(info, offset, len, &len, (u_char *)buf);
 }
+#endif
 
 static inline int spi_flash_erase(spi_flash_t *info, u32 offset, size_t len)
 {
@@ -54,6 +56,7 @@ static inline int spi_flash_erase(spi_flash_t *info, u32 offset, size_t len)
 	return mtd_erase(info, &instr);
 }
 
+#ifndef CONFIG_SPL_BUILD
 static inline int spi_flash_protect(spi_flash_t *info, u32 ofs,
 				    u32 len, bool prot)
 {
@@ -62,6 +65,7 @@ static inline int spi_flash_protect(spi_flash_t *info, u32 ofs,
 	else
 		return mtd_unlock(info, ofs, len);
 }
+#endif
 
 #ifdef CONFIG_DM_MTD_SPI_NOR
 
