@@ -378,6 +378,36 @@ static int sst_write_bp(struct udevice *dev, loff_t to, size_t len,
 }
 #endif
 
+/* Enable/disable 4-byte addressing mode. */
+static int set_4byte(struct spi_nor *nor, const struct spi_nor_info *info,
+		     int enable)
+{
+	int status;
+	bool need_wren = false;
+	u8 cmd;
+
+	switch (JEDEC_MFR(info)) {
+	case SNOR_MFR_MICRON:
+		/* Some Micron need WREN command; all will accept it */
+		need_wren = true;
+	case SNOR_MFR_MACRONIX:
+	case SNOR_MFR_WINBOND:
+		if (need_wren)
+			write_enable(nor);
+
+		cmd = enable ? SNOR_OP_EN4B : SNOR_OP_EX4B;
+		status = nor->write_reg(nor, cmd, NULL, 0);
+		if (need_wren)
+			write_disable(nor);
+
+		return status;
+	default:
+		/* Spansion style */
+		nor->cmd_buf[0] = enable << 7;
+		return nor->write_reg(nor, SNOR_OP_BRWR, nor->cmd_buf, 1);
+	}
+}
+
 #ifdef CONFIG_SPI_NOR_MACRONIX
 static int macronix_quad_enable(struct spi_nor *nor)
 {
@@ -613,6 +643,12 @@ int spi_nor_scan(struct udevice *dev)
 	}
 
 	nor->addr_width = 3;
+	if (mtd->size > SNOR_16MB_BOUN) {
+		nor->addr_width = 4;
+		ret = set_4byte(nor, info, true);
+		if (ret)
+			return ret;
+	}
 
 	/* Dummy cycles for read */
 	switch (nor->read_opcode) {

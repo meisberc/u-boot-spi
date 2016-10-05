@@ -31,6 +31,7 @@ static void m25p_addr2cmd(struct spi_nor *nor, unsigned int addr, u8 *cmd)
 	cmd[1] = addr >> (nor->addr_width * 8 -  8);
 	cmd[2] = addr >> (nor->addr_width * 8 - 16);
 	cmd[3] = addr >> (nor->addr_width * 8 - 24);
+	cmd[4] = addr >> (nor->addr_width * 8 - 32);
 }
 
 static int m25p_cmdsz(struct spi_nor *nor)

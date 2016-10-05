@@ -62,6 +62,10 @@
 #define SNOR_OP_BP		0x02	/* Byte program */
 #define SNOR_OP_AAI_WP		0xad	/* Auto addr increment word program */
 
+/* Used for Macronix and Winbond flashes. */
+#define SNOR_OP_EN4B		0xb7	/* Enter 4-byte mode */
+#define SNOR_OP_EX4B		0xe9	/* Exit 4-byte mode */
+
 /* Status Register bits. */
 #define SR_WIP			BIT(0)	/* Write in progress */
 #define SR_WEL			BIT(1)	/* Write enable latch */
@@ -83,7 +87,7 @@
 /* Flash timeout values */
 #define SNOR_READY_WAIT_PROG	(2 * CONFIG_SYS_HZ)
 #define SNOR_READY_WAIT_ERASE	(5 * CONFIG_SYS_HZ)
-#define SNOR_MAX_CMD_SIZE	4
+#define SNOR_MAX_CMD_SIZE	6
 #define SNOR_16MB_BOUN		0x1000000
 
 enum snor_option_flags {
