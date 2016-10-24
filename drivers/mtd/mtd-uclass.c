@@ -89,5 +89,6 @@ int dm_add_mtd_device(struct udevice *dev)
 UCLASS_DRIVER(mtd) = {
 	.id		= UCLASS_MTD,
 	.name		= "mtd",
+	.flags		= DM_UC_FLAG_SEQ_ALIAS,
 	.per_device_auto_alloc_size = sizeof(struct mtd_info),
 };
