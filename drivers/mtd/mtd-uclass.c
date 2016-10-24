@@ -83,6 +83,23 @@ int dm_add_mtd_device(struct udevice *dev)
 	return 0;
 }
 
+int dm_mtd_probe(struct udevice *dev, struct udevice **devp)
+{
+	*devp = NULL;
+	int ret;
+
+	ret = device_probe(dev);
+	debug("%s:  device_probe: ret=%d\n", __func__, ret);
+	if (ret)
+		goto err;
+
+	*devp = dev;
+	return 0;
+err:
+	device_unbind(dev);
+	return ret;
+}
+
 /*
  * Implement a MTD uclass which should include most flash drivers.
  * The uclass private is pointed to mtd_info.

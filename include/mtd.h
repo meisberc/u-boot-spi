@@ -74,4 +74,13 @@ int dm_mtd_erase(struct udevice *dev, struct erase_info *instr);
  */
 int dm_add_mtd_device(struct udevice *dev);
 
+/**
+ * dm_mtd_probe() - Probe MTD device
+ *
+ * @dev:	MTD device
+ * @devp:	MTD device pointer
+ * @return 0 if OK, -ve on error
+ */
+int dm_mtd_probe(struct udevice *dev, struct udevice **devp);
+
 #endif	/* _MTD_H_ */

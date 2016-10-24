@@ -719,6 +719,12 @@ config CMD_FS_GENERIC
 	  fs types.
 endmenu
 
+config CMD_MTD
+	bool "Generic command for accessing MTD devices"
+	help
+	  Command to support MTD devices accessing.
+	  MTD devices like SPI-NOR, Parallel NOR and NAND.
+
 config CMD_UBI
 	tristate "Enable UBI - Unsorted block images commands"
 	select CRC32
