@@ -11,6 +11,8 @@
 #include <mtd.h>
 #include <linux/log2.h>
 
+#include <dm/device-internal.h>
+
 int dm_mtd_read(struct udevice *dev, loff_t from, size_t len, size_t *retlen,
 		u_char *buf)
 {
@@ -90,5 +92,6 @@ UCLASS_DRIVER(mtd) = {
 	.id		= UCLASS_MTD,
 	.name		= "mtd",
 	.flags		= DM_UC_FLAG_SEQ_ALIAS,
+	.post_bind	= dm_scan_fdt_dev,
 	.per_device_auto_alloc_size = sizeof(struct mtd_info),
 };
