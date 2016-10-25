@@ -15,6 +15,7 @@
 	aliases {
 		serial0 = &uart1;
 		spi0 = &qspi;
+		mtd1 = &qspinor;
 		mmc0 = &sdhci0;
 	};
 
@@ -39,6 +40,11 @@
 };
 
 &qspi {
+	u-boot,dm-pre-reloc;
+	status = "okay";
+};
+
+&qspinor {
 	u-boot,dm-pre-reloc;
 	status = "okay";
 };
