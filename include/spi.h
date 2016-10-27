@@ -530,6 +530,19 @@ struct dm_spi_emul_ops {
  */
 int spi_find_bus_and_cs(int busnum, int cs, struct udevice **busp,
 			struct udevice **devp);
+/**
+ * dm_spi_probe - Find and activate slave device by number
+ *
+ * @busnum:	SPI bus number
+ * @cs:		Chip select to look for
+ * @speed:	SPI speed to use for this slave
+ * @mode:	SPI mode to use for this slave
+ * @bus:	Returns bus device
+ * @devp:	Return slave device
+ * @return 0 if found, -ENODEV on error
+ */
+int dm_spi_probe(int busnum, int cs, int speed, int mode,
+		 struct udevice *bus, struct udevice **devp);
 
 /**
  * spi_get_bus_and_cs() - Find and activate bus and slave devices by number

@@ -9,17 +9,29 @@
 #include <common.h>
 #include <dm.h>
 #include <mtd.h>
+#include <spi.h>
 
 #include <asm/io.h>
 #include <jffs2/jffs2.h>
 
 static struct udevice *mtd_cur_dev;
+static bool dev_type = false;
 
 static int cmd_mtd_set_devnum(unsigned int devnum)
 {
 	struct udevice *dev;
 	int ret;
 
+	ret = uclass_get_device_by_seq(UCLASS_SPI, devnum, &dev);
+	if (ret) {
+		debug("%s: No MTD device %d\n", __func__, devnum);
+		goto mtd;
+	}
+	dev_type = true;
+	mtd_cur_dev = dev;
+
+	return 0;
+mtd:
 	ret = uclass_get_device_by_seq(UCLASS_MTD, devnum, &dev);
 	if (ret) {
 		debug("%s: No MTD device %d\n", __func__, devnum);
@@ -153,7 +165,8 @@ static int do_mtd_erase(int argc, char * const argv[])
 static int do_mtd_probe(int argc, char * const argv[])
 {
 	struct udevice *dev, *devp;
-	int devnum;
+	int devnum, cs = 0;
+	ulong speed = 0, mode = 0;
 	int ret;
 
 	devnum = simple_strtoul(argv[1], NULL, 10);
@@ -169,13 +182,23 @@ static int do_mtd_probe(int argc, char * const argv[])
 	if (ret)
 		return CMD_RET_FAILURE;
 
-	ret = dm_mtd_probe(dev, &devp);
-	if (ret) {
-		printf("failed to probe MTD device %d\n", devnum);
-		return CMD_RET_FAILURE;
+	if (dev_type) {
+		ret = dm_spi_probe(devnum, cs, speed, mode, dev, &devp);
+		if (ret) {
+			printf("failed to probe SPI device %d\n", devnum);
+			goto err;
+		}
+	} else {
+		ret = dm_mtd_probe(dev, &devp);
+		if (ret) {
+			printf("failed to probe MTD device %d\n", devnum);
+			goto err;
+		}
 	}
 
 	return 0;
+err:
+	return CMD_RET_FAILURE;
 }
 
 static int do_mtd_info(void)
@@ -200,18 +223,30 @@ static int do_mtd_info(void)
 
 static int do_mtd_list(void)
 {
-	struct udevice *dev;
-	struct uclass *uc;
+	struct udevice *dev, *dev1;
+	struct uclass *uc, *uc1;
 	int ret;
 
-	ret = uclass_get(UCLASS_MTD, &uc);
+	ret = uclass_get(UCLASS_SPI, &uc);
 	if (ret)
-		return CMD_RET_FAILURE;
+		goto mtd;
 
 	uclass_foreach_dev(dev, uc) {
 		printf("MTD %d:\t%s", dev->req_seq, dev->name);
 			if (device_active(dev))
 				printf("  (active %d)", dev->seq);
+		printf("\n");
+	}
+
+mtd:
+	ret = uclass_get(UCLASS_MTD, &uc1);
+	if (ret)
+		return CMD_RET_FAILURE;
+
+	uclass_foreach_dev(dev1, uc1) {
+		printf("MTD %d:\t%s", dev1->req_seq, dev1->name);
+			if (device_active(dev1))
+				printf("  (active %d)", dev1->seq);
 		printf("\n");
 	}
 

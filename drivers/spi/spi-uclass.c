@@ -289,6 +289,45 @@ int spi_find_bus_and_cs(int busnum, int cs, struct udevice **busp,
 	return ret;
 }
 
+int dm_spi_probe(int busnum, int cs, int speed, int mode,
+		 struct udevice *bus, struct udevice **devp)
+{
+	struct udevice *dev;
+	struct dm_spi_slave_platdata *plat;
+	struct spi_slave *slave;
+	*devp = NULL;
+	int ret;
+
+	ret = spi_find_chip_select(bus, cs, &dev);
+	if (ret) {
+	//	printf("Invalid chip select %d:%d (err=%d)\n", busnum, cs,
+	//	       ret);
+	//	return ret;
+	}
+
+	ret = device_probe(dev);
+	if (ret)
+		goto err;
+	slave = dev_get_parent_priv(dev);
+	slave->dev = dev;
+
+	plat = dev_get_parent_platdata(dev);
+	if (!speed) {
+		speed = plat->max_hz;
+		mode = plat->mode;
+	}
+	ret = spi_set_speed_mode(bus, speed, mode);
+	if (ret)
+		goto err;
+
+	*devp = dev;
+	return 0;
+err:
+	device_remove(dev);
+	device_unbind(dev);
+	return ret;
+}
+
 int spi_get_bus_and_cs(int busnum, int cs, int speed, int mode,
 		       const char *drv_name, const char *dev_name,
 		       struct udevice **busp, struct spi_slave **devp)
