@@ -1016,7 +1016,6 @@ int spi_flash_scan(struct spi_flash *flash)
 
 	flash->name = info->name;
 	flash->memory_map = spi->memory_map;
-	flash->dual_flash = spi->option;
 
 	if (info->flags & SST_WR)
 		flash->flags |= SNOR_F_SST_WR;
